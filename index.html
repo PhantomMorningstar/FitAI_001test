@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitAI - Quản Lý Giảm Cân & Calo bằng AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                    <span class="ai-sparkle">✦</span>
+                </div>
+                <span class="logo-text">Fit<span class="highlight">AI</span></span>
+            </div>
+            <nav class="menu">
+                <a href="#" class="active"><i class="fa-solid fa-chart-simple"></i> <span>Tổng quan</span></a>
+                <a href="#bmi-section"><i class="fa-solid fa-calculator"></i> <span>Tính chỉ số</span></a>
+                <a href="#camera-section"><i class="fa-solid fa-camera"></i> <span>Quét món ăn</span></a>
+                <a href="#history-section"><i class="fa-solid fa-calendar-days"></i> <span>Nhật ký</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Chào buổi sáng, Người bạn! 💪</h1>
+                <p>Hôm nay mục tiêu FitAI đặt ra cho bạn là giảm 500 calo.</p>
+            </header>
+
+            <section class="dashboard-grid">
+                <div class="stat-card calories">
+                    <h3>Calo đã nạp</h3>
+                    <div class="value">1,250 <span class="unit">kcal</span></div>
+                    <p>Mục tiêu: 1,800 kcal</p>
+                </div>
+                <div class="stat-card water">
+                    <h3>Nước uống</h3>
+                    <div class="value">1.5 <span class="unit">Lít</span></div>
+                    <p>Mục tiêu: 2.5 Lít</p>
+                </div>
+                <div class="stat-card weight">
+                    <h3>Cân nặng hiện tại</h3>
+                    <div class="value">68 <span class="unit">kg</span></div>
+                    <p>Mục tiêu: 62 kg</p>
+                </div>
+            </section>
+
+            <section id="bmi-section" class="app-section">
+                <h2><i class="fa-solid fa-calculator"></i> Tính toán Thể trạng (BMI)</h2>
+                <div class="card grid-2">
+                    <div class="input-group-wrapper">
+                        <div class="input-field">
+                            <label for="height">Chiều cao (cm)</label>
+                            <input type="number" id="height" placeholder="Ví dụ: 170" value="170">
+                        </div>
+                        <div class="input-field">
+                            <label for="weight">Cân nặng (kg)</label>
+                            <input type="number" id="weight" placeholder="Ví dụ: 68" value="68">
+                        </div>
+                        <button class="btn btn-primary" onclick="calculateBMI()">Tính ngay</button>
+                    </div>
+                    <div class="result-box" id="bmi-result">
+                        <h4>Kết quả của bạn:</h4>
+                        <div class="bmi-value">23.5</div>
+                        <p class="bmi-status">Bình thường</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="camera-section" class="app-section">
+                <h2><i class="fa-solid fa-camera"></i> Nhận diện Thức ăn bằng FitAI Camera</h2>
+                <div class="card grid-2">
+                    <div class="upload-zone">
+                        <input type="file" id="food-upload" accept="image/*" hidden onchange="previewFood(event)">
+                        <label for="food-upload" class="upload-label">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p>Bấm để tải ảnh hoặc Chụp ảnh món ăn</p>
+                        </label>
+                        <img id="food-preview" src="#" alt="Xem trước món ăn" style="display:none; max-width:100%; border-radius: 10px; margin-top: 15px;">
+                    </div>
+                    <div class="food-analysis" id="analysis-result" style="display: none;">
+                        <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Kết quả phân tích từ AI:</h3>
+                        <div class="food-name">Salad Ức Gà Trộn</div>
+                        <div class="calorie-tag">~ 350 kcal</div>
+                        <table class="nutrients-table">
+                            <tr><td>Protein:</td><td><strong>28g</strong></td></tr>
+                            <tr><td>Carbs:</td><td><strong>12g</strong></td></tr>
+                            <tr><td>Chất béo:</td><td><strong>8g</strong></td></tr>
+                        </table>
+                        <button class="btn btn-success" onclick="addFoodToDiary()">+ Thêm vào Nhật ký nạp</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="history-section" class="app-section">
+                <h2><i class="fa-solid fa-calendar-days"></i> Quản lý Thực đơn Hôm nay</h2>
+                <div class="card">
+                    <ul class="food-list" id="diary-list">
+                        <li class="food-item">
+                            <div class="food-info">
+                                <span class="time">07:30</span>
+                                <strong>Bánh mì trứng ốp la</strong>
+                            </div>
+                            <span class="badge font-calorie">310 kcal</span>
+                        </li>
+                        <li class="food-item">
+                            <div class="food-info">
+                                <span class="time">12:15</span>
+                                <strong>Cơm ức gà & Bông cải xanh</strong>
+                            </div>
+                            <span class="badge font-calorie">590 kcal</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function calculateBMI() {
+            const h = parseFloat(document.getElementById('height').value) / 100;
+            const w = parseFloat(document.getElementById('weight').value);
+            if(h > 0 && w > 0) {
+                const bmi = (w / (h * h)).toFixed(1);
+                let status = "";
+                if(bmi < 18.5) status = "Gầy";
+                else if(bmi < 24.9) status = "Bình thường";
+                else if(bmi < 29.9) status = "Thừa cân";
+                else status = "Béo phì";
+                
+                document.querySelector('.bmi-value').innerText = bmi;
+                document.querySelector('.bmi-status').innerText = status;
+            }
+        }
+
+        function previewFood(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('food-preview');
+                output.src = reader.result;
+                output.style.display = 'block';
+                // Mô phỏng AI phân tích sau 1 giây
+                setTimeout(() => {
+                    document.getElementById('analysis-result').style.display = 'block';
+                }, 1000);
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function addFoodToDiary() {
+            const list = document.getElementById('diary-list');
+            const newItem = document.createElement('li');
+            newItem.className = 'food-item';
+            newItem.innerHTML = `
+                <div class="food-info">
+                    <span class="time">Vừa xong</span>
+                    <strong>Salad Ức Gà Trộn (Từ ảnh quét)</strong>
+                </div>
+                <span class="badge font-calorie">350 kcal</span>
+            `;
+            list.appendChild(newItem);
+            alert('Đã thêm món ăn vào danh sách quản lý thành công!');
+        }
+    </script>
+</body>
+</html>

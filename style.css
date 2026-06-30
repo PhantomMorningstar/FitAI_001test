@@ -1,0 +1,531 @@
+/* Gốc tùy biến cấu trúc và màu sắc */
+:root {
+    --primary-color: #2ecc71; /* Màu xanh lá tươi mát của sức khỏe */
+    --secondary-color: #3498db;
+    --dark-color: #1a252f;
+    --light-bg: #f4f6f9;
+    --card-bg: #ffffff;
+    --text-muted: #7f8c8d;
+    --border-radius: 16px;
+    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--light-bg);
+    color: var(--dark-color);
+    overflow-x: hidden;
+}
+
+/* Bố cục App / Web Grid */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* LOGO BRANDING CHUYÊN NGHIỆP */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+    padding: 5px;
+}
+
+.logo-icon {
+    position: relative;
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, var(--primary-color), #27ae60);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+}
+
+.logo-icon i {
+    color: white;
+    font-size: 20px;
+}
+
+.ai-sparkle {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    color: #f1c40f;
+    font-size: 14px;
+    animation: pulse 2s infinite;
+}
+
+.logo-text {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+.logo-text .highlight {
+    color: var(--primary-color);
+    position: relative;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* Sidebar bên trái */
+.sidebar {
+    width: 280px;
+    background-color: var(--dark-color);
+    color: #fff;
+    padding: 30px 24px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu a {
+    color: #95a5a6;
+    text-decoration: none;
+    padding: 14px 16px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: var(--transition);
+}
+
+.menu a i {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.menu a:hover {
+    color: #fff;
+    background-color: rgba(255,255,255,0.05);
+}
+
+.menu a.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+}
+
+/* Vùng nội dung chính ở bên phải */
+.main-content {
+    flex: 1;
+    padding: 40px;
+    margin-left: 280px; /* Nhường chỗ cho sidebar cố định */
+    max-width: 1200px;
+}
+
+.main-header {
+    margin-bottom: 35px;
+}
+
+.main-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #111;
+}
+
+.main-header p {
+    color: var(--text-muted);
+    font-size: 16px;
+}
+
+/* Các thẻ thông số (Stats Card) */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+    border-top: 4px solid var(--primary-color);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-card.water { border-top-color: var(--secondary-color); }
+.stat-card.weight { border-top-color: #e67e22; }
+
+.stat-card h3 {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.stat-card .value {
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.stat-card .unit {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.stat-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Form & Layout khối chung */
+.app-section {
+    margin-bottom: 40px;
+}
+
+.app-section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+/* Trường dữ liệu nhập */
+.input-field {
+    margin-bottom: 20px;
+}
+
+.input-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.input-field input {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    background-color: #f8fafc;
+    transition: var(--transition);
+}
+
+.input-field input:focus {
+    border-color: var(--primary-color);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+}
+
+/* Các loại nút nhấn */
+.btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.btn-primary { background: var(--primary-color); color: white; }
+.btn-primary:hover { background: #27ae60; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2); }
+.btn-success { background: #9b59b6; color: white; margin-top: 15px; }
+.btn-success:hover { background: #8e44ad; box-shadow: 0 4px 12px rgba(142, 68, 173, 0.2); }
+
+/* Hộp hiển thị kết quả BMI */
+.result-box {
+    background: #f0fff4;
+    border: 2px dashed #c6f6d5;
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.result-box h4 {
+    font-size: 15px;
+    color: #276749;
+}
+
+.bmi-value {
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--primary-color);
+    margin: 8px 0;
+}
+
+.bmi-status {
+    font-weight: 700;
+    background: var(--primary-color);
+    color: white;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+/* Vùng tải ảnh món ăn */
+.upload-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: var(--border-radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.upload-zone:hover {
+    border-color: var(--secondary-color);
+    background: #f0f7ff;
+}
+
+.upload-label i {
+    font-size: 44px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.upload-label p {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Phân tích Calo */
+.food-analysis h3 {
+    font-size: 16px;
+    color: #1e293b;
+    margin-bottom: 15px;
+}
+
+.food-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.calorie-tag {
+    font-size: 20px;
+    color: #e74c3c;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.nutrients-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.nutrients-table td {
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 15px;
+}
+
+.nutrients-table td:last-child {
+    text-align: right;
+}
+
+/* Danh sách quản lý nhật ký thức ăn */
+.food-list {
+    list-style: none;
+}
+
+.food-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.food-item:last-child { border-bottom: none; }
+
+.food-info {
+    display: flex;
+    align-items: center;
+}
+
+.food-info .time {
+    color: var(--text-muted);
+    margin-right: 15px;
+    font-size: 14px;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.food-info strong {
+    font-size: 15px;
+}
+
+.badge {
+    background: #fff5eb;
+    color: #e67e22;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* RESPONSIVE TOÀN DIỆN CHO MOBILE VÀ TABLET */
+@media (max-width: 991px) {
+    .sidebar {
+        width: 240px;
+    }
+    .main-content {
+        margin-left: 240px;
+        padding: 30px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    /* Biến Sidebar thành Thanh Bottom Navigation tinh gọn trên mobile */
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        padding: 10px 15px;
+        background-color: rgba(26, 37, 47, 0.96);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 20px 20px 0 0;
+    }
+
+    /* Ẩn logo ở sidebar khi xuống Mobile để đỡ tốn không gian */
+    .sidebar .logo {
+        display: none;
+    }
+
+    .menu {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-around;
+        gap: 0;
+    }
+
+    .menu a {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px;
+        font-size: 11px;
+        color: #bdc3c7;
+        flex: 1;
+        text-align: center;
+        border-radius: 12px;
+    }
+
+    .menu a i {
+        font-size: 20px;
+    }
+
+    /* Ẩn chữ trên menu mobile để giao diện thanh lịch, chỉ hiển thị icon */
+    .menu a span {
+        font-size: 10px;
+    }
+
+    .menu a.active {
+        background-color: transparent;
+        color: var(--primary-color);
+        box-shadow: none;
+    }
+
+    /* Tối ưu vùng Main Content */
+    .main-content {
+        margin-left: 0;
+        padding: 20px 16px 90px 16px; /* Cách đáy 90px để không bị đè bởi Bottom Nav */
+    }
+
+    .main-header h1 {
+        font-size: 24px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* Trượt dọc 1 cột trên điện thoại */
+        gap: 16px;
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr; /* Các form xếp dọc lớp lang */
+        gap: 20px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+    
+    .bmi-value {
+        font-size: 46px;
+    }
+}

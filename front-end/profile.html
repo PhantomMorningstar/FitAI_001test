@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitAI - Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div id="profile-page" class="app-container">
+        <header class="app-top-bar">
+            <span class="app-brand-name">Fit<span class="highlight">AI</span></span>
+        </header>
+        <main class="app-main-content">
+            <div class="content-max-width">
+                <div class="page-header">
+                    <h2>Profile</h2>
+                    <p class="subtitle">Manage account settings and your personal health profile.</p>
+                </div>
+                <div id="auth-container" class="section-card">
+                    <h3>Sign In hoặc Sign Up</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 18px;">Đăng ký nếu bạn chưa có tài khoản, hoặc đăng nhập nếu đã có.</p>
+                    <div class="input-field"><label>Email Address</label><input type="email" id="auth-email" placeholder="name@example.com"></div>
+                    <div class="input-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-primary" id="btn-login" style="flex:1;">Sign In</button>
+                        <button class="btn" id="btn-signup" style="flex:1; background: #e0e0e0;">Sign Up</button>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-top: 12px;">Sign Up tạo tài khoản mới. Sign In đăng nhập vào tài khoản hiện có.</p>
+                </div>
+
+                <div id="authenticated-profile-container" style="display: none; display: flex; flex-direction: column; gap: 20px;">
+                    <div id="settings-panel" class="section-card" style="display: none; border: 1px dashed var(--primary-color);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h4 style="color: var(--primary-color);"><i class="fa-solid fa-sliders"></i> Configuration Options</h4>
+                            <button class="btn" id="btn-logout" style="padding: 5px 10px; font-size:12px; background:#e74c3c; color:white;">Log Out</button>
+                        </div>
+                        <div class="input-field"><label>System Notifications</label><select><option>On</option><option>Off</option></select></div>
+                    </div>
+
+                    <div class="section-card">
+                        <h3><i class="fa-regular fa-id-card"></i> Personal Profile</h3>
+                        <div class="profile-stats-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
+                            <div class="p-stat-item"><strong>Gender:</strong> <span id="prof-gender">-</span></div>
+                            <div class="p-stat-item"><strong>Height:</strong> <span id="prof-height">-</span> cm</div>
+                            <div class="p-stat-item"><strong>Weight:</strong> <span id="prof-weight">-</span> kg</div>
+                            <div class="p-stat-item"><strong>Goal:</strong> <span id="prof-goal">-</span></div>
+                        </div>
+                    </div>
+
+                    <div class="section-card ai-assistant-chat-box">
+                        <h3><i class="fa-solid fa-robot" style="color:var(--primary-color)"></i> AI Food Assistant</h3>
+                        <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">Enter what you ate and AI will break down calories and nutrition instantly.</p>
+                        <div class="chat-display-area" id="ai-chat-history" style="max-height:200px; overflow-y:auto; background:#fafbfc; border:1px solid var(--border-color); border-radius:10px; padding:15px; margin-bottom:15px; display:flex; flex-direction:column; gap:10px;">
+                            <div class="ai-msg"><strong>AI:</strong> Hi there! Please enter your meal.</div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="ai-chat-input" placeholder="Type your meal here..." style="flex:1; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                            <button class="btn btn-primary" id="ai-chat-send-btn"><i class="fa-regular fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-content-container">
+                <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Overview</span></a>
+                <a href="roadmap.html" class="nav-item"><i class="fa-solid fa-route"></i><span>Roadmap</span></a>
+                <a href="camera.html" class="nav-item action-btn-wrapper"><div class="action-circle-btn"><i class="fa-solid fa-camera"></i></div><span>Camera</span></a>
+                <a href="diary.html" class="nav-item"><i class="fa-solid fa-book-bookmark"></i><span>Diary</span></a>
+                <a href="profile.html" class="nav-item active"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+            </div>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

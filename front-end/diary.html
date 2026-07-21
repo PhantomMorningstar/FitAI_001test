@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitAI - Diary</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-top-bar">
+            <span class="app-brand-name">Fit<span class="highlight">AI</span></span>
+        </header>
+        <main class="app-main-content">
+            <div class="content-max-width">
+                <div class="page-header">
+                    <h2>Diary</h2>
+                    <p class="subtitle">Review meals logged for today and track your intake.</p>
+                </div>
+                <div class="section-card">
+                    <h3>Today's Food Diary</h3>
+                    <ul class="food-list" id="diary-list" style="list-style: none; padding: 0; margin-top: 15px;"></ul>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-content-container">
+                <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Overview</span></a>
+                <a href="roadmap.html" class="nav-item"><i class="fa-solid fa-route"></i><span>Roadmap</span></a>
+                <a href="camera.html" class="nav-item action-btn-wrapper"><div class="action-circle-btn"><i class="fa-solid fa-camera"></i></div><span>Camera</span></a>
+                <a href="diary.html" class="nav-item active"><i class="fa-solid fa-book-bookmark"></i><span>Diary</span></a>
+                <a href="profile.html" class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+            </div>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

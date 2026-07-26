@@ -1,0 +1,9 @@
+<nav class="bottom-nav" aria-label="Điều hướng chính">
+    <div class="nav-content-container">
+        <a href="/" class="nav-item<%= activePage === 'overview' ? ' active' : '' %>"<%- activePage === 'overview' ? ' aria-current="page"' : '' %>><i class="fa-solid fa-house" aria-hidden="true"></i><span>Tổng quan</span></a>
+        <a href="/roadmap" class="nav-item<%= activePage === 'roadmap' ? ' active' : '' %>"<%- activePage === 'roadmap' ? ' aria-current="page"' : '' %>><i class="fa-solid fa-route" aria-hidden="true"></i><span>Lộ trình</span></a>
+        <a href="/camera" class="nav-item action-btn-wrapper<%= activePage === 'camera' ? ' active' : '' %>"<%- activePage === 'camera' ? ' aria-current="page"' : '' %>><div class="action-circle-btn"><i class="fa-solid fa-camera" aria-hidden="true"></i></div><span>Máy ảnh</span></a>
+        <a href="/diary" class="nav-item<%= activePage === 'diary' ? ' active' : '' %>"<%- activePage === 'diary' ? ' aria-current="page"' : '' %>><i class="fa-solid fa-book-bookmark" aria-hidden="true"></i><span>Nhật ký</span></a>
+        <a href="/profile" class="nav-item<%= activePage === 'profile' ? ' active' : '' %>"<%- activePage === 'profile' ? ' aria-current="page"' : '' %>><i class="fa-solid fa-user" aria-hidden="true"></i><span>Hồ sơ</span></a>
+    </div>
+</nav>

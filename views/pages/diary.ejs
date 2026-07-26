@@ -1,0 +1,40 @@
+<%- include('../partials/head', { pageTitle: 'Nhật ký thực phẩm' }) %>
+<body>
+    <%- include('../partials/skip-link', { targetId: 'main-content' }) %>
+    <div class="app-container">
+        <%- include('../partials/app-header') %>
+        <main class="app-main-content" id="main-content" tabindex="-1">
+            <div class="content-max-width">
+                <div class="page-header">
+                    <h1>Nhật ký thực phẩm</h1>
+                    <p class="subtitle">Xem các món đã ghi theo ngày và theo dõi lượng dinh dưỡng đã nạp.</p>
+                </div>
+                <div class="section-card">
+                    <div class="diary-date-toolbar">
+                        <button type="button" class="btn btn-secondary diary-date-step" data-days="-1" aria-label="Ngày trước"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+                        <div>
+                            <label for="diary-date-picker">Ngày ghi nhật ký</label>
+                            <input type="date" id="diary-date-picker">
+                        </div>
+                        <button type="button" class="btn btn-secondary diary-date-step" data-days="1" aria-label="Ngày sau"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+                        <button type="button" class="btn btn-secondary" id="diary-today-btn">Hôm nay</button>
+                    </div>
+                    <h3 id="diary-date-title">Nhật ký thực phẩm</h3>
+                    <div class="diary-summary-grid">
+                        <div><strong id="diary-total-calories">0</strong><span>kcal</span></div>
+                        <div><strong id="diary-total-protein">0 g</strong><span>Chất đạm</span></div>
+                        <div><strong id="diary-total-carbs">0 g</strong><span>Tinh bột</span></div>
+                        <div><strong id="diary-total-fat">0 g</strong><span>Chất béo</span></div>
+                        <div><strong id="diary-total-fiber">0 g</strong><span>Chất xơ</span></div>
+                    </div>
+                    <p id="diary-action-status" class="field-error" role="status" aria-live="polite"></p>
+                    <ul class="food-list" id="diary-list" style="list-style: none; padding: 0; margin-top: 15px;"></ul>
+                </div>
+            </div>
+        </main>
+        <%- include('../partials/bottom-nav', { activePage: 'diary' }) %>
+    </div>
+
+    <%- include('../partials/app-scripts', { extraScripts: ['food-entry-utils.js'] }) %>
+</body>
+</html>

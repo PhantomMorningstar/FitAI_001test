@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#16a36a">
+    <meta name="application-name" content="FitAI">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title><%= pageTitle %> | FitAI</title>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/assets/icons/fitai-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icons/fitai-icon.svg">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <% if (typeof includeIcons === 'undefined' || includeIcons) { %>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <% } %>
+    <% if (typeof includeFirebase === 'undefined' || includeFirebase) { %>
+        <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <% } %>
+</head>

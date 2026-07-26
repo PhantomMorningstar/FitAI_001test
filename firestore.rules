@@ -1,0 +1,135 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function ownsExistingDocument() {
+      return resource.data.keys().hasAll(['ownerId'])
+        && isOwner(resource.data.ownerId);
+    }
+
+    function ownsLegacyDiaryDocument() {
+      return isSignedIn()
+        && !resource.data.keys().hasAny(['ownerId'])
+        && resource.data.keys().hasAll(['userId'])
+        && resource.data.userId == request.auth.uid;
+    }
+
+    function isOwnDatedEntryId(entryId) {
+      return isSignedIn()
+        && entryId.matches('^' + request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    match /profiles/{userId} {
+      allow read, delete: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.ownerId == request.auth.uid
+        && ((!resource.data.keys().hasAny(['ownerId']))
+          || resource.data.ownerId == request.auth.uid);
+    }
+
+    match /foodDiaries/{entryId} {
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.timestamp is timestamp;
+
+      allow read, delete: if ownsExistingDocument()
+        || ownsLegacyDiaryDocument();
+
+      allow update: if isOwner(request.resource.data.ownerId)
+        && (ownsExistingDocument() || ownsLegacyDiaryDocument());
+    }
+
+    match /weightEntries/{entryId} {
+      function validWeightEntry() {
+        return request.resource.data.ownerId == request.auth.uid
+          && entryId == request.auth.uid + "_" + request.resource.data.dateKey
+          && request.resource.data.dateKey is string
+          && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.weightKg is number
+          && request.resource.data.weightKg >= 30
+          && request.resource.data.weightKg <= 350
+          && request.resource.data.measuredAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
+      }
+
+      allow create: if isSignedIn() && validWeightEntry();
+      allow get: if isOwnDatedEntryId(entryId);
+      allow list: if ownsExistingDocument();
+      allow delete: if ownsExistingDocument();
+      allow update: if ownsExistingDocument()
+        && validWeightEntry()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.dateKey == resource.data.dateKey;
+    }
+
+    match /activityEntries/{entryId} {
+      function validActivityEntry() {
+        return request.resource.data.ownerId == request.auth.uid
+          && entryId == request.auth.uid + "_" + request.resource.data.dateKey
+          && request.resource.data.dateKey is string
+          && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.steps is number
+          && request.resource.data.steps >= 0
+          && request.resource.data.steps <= 100000
+          && request.resource.data.activeMinutes is number
+          && request.resource.data.activeMinutes >= 0
+          && request.resource.data.activeMinutes <= 1440
+          && request.resource.data.measuredAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
+      }
+
+      allow create: if isSignedIn() && validActivityEntry();
+      allow get: if isOwnDatedEntryId(entryId);
+      allow list: if ownsExistingDocument();
+      allow delete: if ownsExistingDocument();
+      allow update: if ownsExistingDocument()
+        && validActivityEntry()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.dateKey == resource.data.dateKey;
+    }
+
+    match /wellnessEntries/{entryId} {
+      function validWellnessEntry() {
+        return request.resource.data.ownerId == request.auth.uid
+          && entryId == request.auth.uid + "_" + request.resource.data.dateKey
+          && request.resource.data.dateKey is string
+          && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.sleepHours is number
+          && request.resource.data.sleepHours >= 0
+          && request.resource.data.sleepHours <= 24
+          && request.resource.data.stressLevel is int
+          && request.resource.data.stressLevel >= 1
+          && request.resource.data.stressLevel <= 5
+          && request.resource.data.measuredAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
+      }
+
+      allow create: if isSignedIn() && validWellnessEntry();
+      allow get: if isOwnDatedEntryId(entryId);
+      allow list: if ownsExistingDocument();
+      allow delete: if ownsExistingDocument();
+      allow update: if ownsExistingDocument()
+        && validWellnessEntry()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.dateKey == resource.data.dateKey;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

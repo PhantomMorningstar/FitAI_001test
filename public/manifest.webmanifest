@@ -1,0 +1,34 @@
+{
+  "id": "/",
+  "name": "FitAI - Theo dõi sức khỏe",
+  "short_name": "FitAI",
+  "description": "Theo dõi dinh dưỡng, cân nặng và thói quen sức khỏe.",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7f6",
+  "theme_color": "#16a36a",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "/assets/icons/fitai-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nhật ký thực phẩm",
+      "short_name": "Nhật ký",
+      "url": "/diary"
+    },
+    {
+      "name": "Chụp món ăn",
+      "short_name": "Camera",
+      "url": "/camera"
+    }
+  ]
+}

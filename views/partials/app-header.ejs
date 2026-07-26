@@ -1,0 +1,17 @@
+<header class="app-top-bar">
+    <span class="app-brand-name">Fit<span class="highlight">AI</span></span>
+    <div class="top-bar-right">
+        <button type="button" class="install-app-button" id="install-app-btn" hidden>
+            <i class="fa-solid fa-arrow-down-to-line" aria-hidden="true"></i>
+            <span>Cài ứng dụng</span>
+        </button>
+        <button type="button" class="language-toggle" id="language-toggle" aria-label="Switch to English" title="English">EN</button>
+        <% if (typeof showDashboardActions !== 'undefined' && showDashboardActions) { %>
+            <div class="streak-mini"><i class="fa-solid fa-fire"></i> <span id="user-streak">1</span></div>
+            <button type="button" class="header-icon-button" id="settings-toggle-btn" aria-label="Mở cài đặt" style="display: none;"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+        <% } %>
+    </div>
+</header>
+<div class="connection-banner" id="connection-banner" role="status" aria-live="polite" hidden>
+    Bạn đang ngoại tuyến. Một số chức năng cần Internet.
+</div>

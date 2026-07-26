@@ -1,0 +1,16 @@
+<%- include('../partials/head', {
+    pageTitle: title,
+    includeIcons: false,
+    includeFirebase: false
+}) %>
+<body>
+    <%- include('../partials/skip-link', { targetId: 'main-content' }) %>
+    <main class="onboarding-container" id="main-content" tabindex="-1">
+        <section class="quiz-card" style="text-align: center;">
+            <h1><%= statusCode %></h1>
+            <p class="subtitle"><%= message %></p>
+            <a class="btn btn-primary" href="/">Quay về tổng quan</a>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<%- include('../partials/head', { pageTitle: 'Nhận diện món ăn' }) %>
+<body>
+    <%- include('../partials/skip-link', { targetId: 'main-content' }) %>
+    <div class="app-container">
+        <%- include('../partials/app-header') %>
+        <main class="app-main-content" id="main-content" tabindex="-1">
+            <div class="content-max-width">
+                <div class="page-header">
+                    <h1>Nhận diện món ăn</h1>
+                    <p class="subtitle">Tra cứu khẩu phần đã cân bằng dữ liệu thành phần thực phẩm USDA.</p>
+                </div>
+                <div class="section-card grid-2-columns">
+                    <div class="upload-zone">
+                        <input type="file" id="food-upload" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" hidden>
+                        <label for="food-upload" class="upload-label">
+                            <i class="fa-solid fa-camera" style="font-size: 46px; color: var(--primary-color);"></i>
+                            <p style="margin-top: 12px; font-weight: 500;">Chụp hoặc tải ảnh món ăn lên</p>
+                        </label>
+                        <button type="button" class="btn btn-secondary" id="upload-image-btn" style="margin-top: 12px; width:100%;">Tải ảnh lên</button>
+                        <img id="food-preview" src="#" alt="Ảnh xem trước của món ăn" style="display:none; max-width:100%; max-height:250px; border-radius:12px; margin:15px auto 0;">
+                        <button type="button" class="btn btn-primary" id="analyze-photo-btn" style="margin-top:12px; width:100%;" disabled>Phân tích ảnh bằng AI</button>
+                        <p id="vision-status" class="subtitle" role="status" style="margin-top:10px;"></p>
+                        <label for="vision-food-candidates" id="vision-candidates-label" style="display:none; margin-top:12px; font-weight:600;">Gợi ý từ AI — hãy xác nhận món gần đúng nhất</label>
+                        <select id="vision-food-candidates" style="display:none; width:100%; margin-top:6px;"></select>
+                        <p id="vision-confidence" class="vision-confidence" role="status" hidden></p>
+                        <button type="button" class="btn btn-secondary" id="confirm-food-candidate-btn" style="display:none; margin-top:8px; width:100%;">Xác nhận gợi ý này</button>
+                        <label for="food-search-query" style="display:block; margin-top:16px; font-weight:600;">Tên món ăn</label>
+                        <input id="food-search-query" type="search" placeholder="Ví dụ: ức gà nấu chín" maxlength="100" style="width:100%; margin-top:6px;">
+                        <label for="food-serving-grams" style="display:block; margin-top:12px; font-weight:600;">Khẩu phần đã cân (gram)</label>
+                        <input id="food-serving-grams" type="number" min="1" max="2000" value="100" style="width:100%; margin-top:6px;">
+                        <button type="button" class="btn btn-primary" id="recognize-food-btn" style="margin-top: 12px; width:100%;">Tra cứu dữ liệu USDA</button>
+                        <p id="food-search-status" class="subtitle" role="status" style="margin-top:10px;"></p>
+                        <p class="subtitle" style="margin-top:10px;">Ảnh chỉ được gửi tới Google Gemini khi bạn nhấn “Phân tích ảnh bằng AI”. AI chỉ gợi ý món nhìn thấy; không thể đo khối lượng, dầu, nước sốt hoặc nguyên liệu bị che khuất.</p>
+                    </div>
+                    <div class="food-analysis" id="analysis-result" style="display:none; text-align:center; flex-direction:column; justify-content:center;">
+                        <h4 style="color:#2ecc71;"><i class="fa-solid fa-database"></i> Kết quả dinh dưỡng</h4>
+                        <div class="food-name" style="font-size: 22px; font-weight: bold; margin: 12px 0;" id="analysis-food-name">...</div>
+                        <div class="nutrition-grid" style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+                            <div class="calorie-tag" style="background: rgba(46,204,113,0.15); color:#2ecc71; padding:6px 20px; border-radius:20px; font-weight:bold;">Năng lượng: <span id="analysis-calories">-- kcal</span></div>
+                            <div class="calorie-tag" style="background: rgba(46,204,113,0.1); color:#2ecc71; padding:6px 20px; border-radius:20px; font-weight:bold;">Chất đạm: <span id="analysis-protein">-- g</span></div>
+                            <div class="calorie-tag" style="background: rgba(46,204,113,0.1); color:#2ecc71; padding:6px 20px; border-radius:20px; font-weight:bold;">Tinh bột: <span id="analysis-carbs">-- g</span></div>
+                            <div class="calorie-tag" style="background: rgba(46,204,113,0.1); color:#2ecc71; padding:6px 20px; border-radius:20px; font-weight:bold;">Chất béo: <span id="analysis-fat">-- g</span></div>
+                            <div class="calorie-tag" style="background: rgba(46,204,113,0.1); color:#2ecc71; padding:6px 20px; border-radius:20px; font-weight:bold;">Chất xơ: <span id="analysis-fiber">-- g</span></div>
+                        </div>
+                        <label for="food-result-select" style="font-weight:600;">Chọn kết quả gần đúng nhất</label>
+                        <select id="food-result-select" style="width:100%; margin-top:8px;"></select>
+                        <label for="food-portion-select" id="food-portion-label" style="display:none; margin-top:12px; font-weight:600;">Chọn khẩu phần USDA</label>
+                        <select id="food-portion-select" style="display:none; width:100%; margin-top:8px;"></select>
+                        <p id="analysis-source" class="subtitle" style="margin-top:10px;"></p>
+                        <button class="btn btn-primary" id="add-food-btn" style="margin-top: 20px; width:100%;" disabled>+ Thêm vào nhật ký</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <%- include('../partials/bottom-nav', { activePage: 'camera' }) %>
+    </div>
+    <%- include('../partials/app-scripts', { extraScripts: ['image-utils.js'] }) %>
+</body>
+</html>

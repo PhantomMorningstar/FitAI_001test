@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FitAI">
+  <rect width="512" height="512" rx="112" fill="#16a36a"/>
+  <path d="M132 126h248v68H214v61h139v66H214v117h-82V126z" fill="#fff"/>
+  <circle cx="363" cy="397" r="43" fill="#f59e0b"/>
+</svg>

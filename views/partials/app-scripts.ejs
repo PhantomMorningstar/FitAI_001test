@@ -1,0 +1,10 @@
+<script src="/assets/js/i18n.js"></script>
+<script src="/assets/js/error-monitor.js"></script>
+<script src="/assets/js/date-utils.js"></script>
+<script src="/assets/js/daily-focus-utils.js"></script>
+<script src="/assets/js/pwa.js"></script>
+<script src="/assets/js/motion.js"></script>
+<% (typeof extraScripts === 'undefined' ? [] : extraScripts).forEach((script) => { %>
+    <script src="/assets/js/<%= script %>"></script>
+<% }); %>
+<script src="/assets/js/app.js"></script>

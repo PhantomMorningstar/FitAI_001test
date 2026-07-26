@@ -1,0 +1,50 @@
+<%- include('../partials/head', { pageTitle: 'Lộ trình' }) %>
+<body>
+    <%- include('../partials/skip-link', { targetId: 'main-content' }) %>
+    <div class="app-container">
+        <%- include('../partials/app-header') %>
+        <main class="app-main-content" id="main-content" tabindex="-1">
+            <div class="content-max-width">
+                <div class="page-header">
+                    <h1>Lộ trình</h1>
+                    <p class="subtitle">Các giai đoạn cá nhân hóa giúp bạn tiến tới mục tiêu cân nặng an toàn.</p>
+                </div>
+                <div class="section-card">
+                    <h3>Lộ trình cá nhân hóa của bạn</h3>
+                    <p id="roadmap-status" class="subtitle" role="status">Đang tải hồ sơ và dữ liệu tiến độ...</p>
+                    <div class="roadmap-summary-grid">
+                        <div><span>Mục tiêu</span><strong id="roadmap-goal">--</strong></div>
+                        <div><span>Hiện tại</span><strong id="roadmap-current">--</strong></div>
+                        <div><span>Cân nặng đích</span><strong id="roadmap-target">--</strong></div>
+                        <div><span>Tiến độ</span><strong id="roadmap-progress">--</strong></div>
+                        <div><span>Thời gian ước tính</span><strong id="roadmap-weeks">--</strong></div>
+                    </div>
+                    <div class="roadmap-timeline" id="personalized-roadmap"></div>
+                </div>
+                <section class="section-card calibration-card" aria-labelledby="calibration-title">
+                    <div class="calibration-heading">
+                        <div>
+                            <span class="daily-focus-eyebrow">ĐÁNH GIÁ BẰNG DỮ LIỆU THẬT</span>
+                            <h3 id="calibration-title">Hiệu chỉnh kế hoạch</h3>
+                        </div>
+                        <span id="calibration-confidence" class="daily-focus-progress">Chưa đủ dữ liệu</span>
+                    </div>
+                    <p id="calibration-message" class="subtitle" role="status">FitAI cần tối thiểu 14 ngày dữ liệu trước khi đề xuất thay đổi.</p>
+                    <div class="calibration-grid">
+                        <div><span>Tốc độ kế hoạch</span><strong id="calibration-planned-rate">--</strong></div>
+                        <div><span>Tốc độ thực tế</span><strong id="calibration-observed-rate">--</strong></div>
+                        <div><span>Năng lượng đã ghi</span><strong id="calibration-average-intake">--</strong></div>
+                        <div><span>TDEE quan sát</span><strong id="calibration-observed-tdee">--</strong></div>
+                    </div>
+                    <div id="calibration-recommendation" class="calibration-recommendation">
+                        Tiếp tục ghi cân nặng và món ăn để mở đánh giá.
+                    </div>
+                    <p class="subtitle calibration-note">Đề xuất không tự động thay đổi mục tiêu. Chỉ đánh giá sau ít nhất 14 ngày để giảm ảnh hưởng của nước và dao động ngắn hạn.</p>
+                </section>
+            </div>
+        </main>
+        <%- include('../partials/bottom-nav', { activePage: 'roadmap' }) %>
+    </div>
+    <%- include('../partials/app-scripts', { extraScripts: ['weight-utils.js', 'roadmap-utils.js', 'plan-calibration-utils.js'] }) %>
+</body>
+</html>

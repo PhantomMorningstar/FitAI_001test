@@ -1,0 +1,250 @@
+<%- include('../partials/head', { pageTitle: 'Theo dõi và lộ trình' }) %>
+<body>
+    <%- include('../partials/skip-link', { targetId: 'onboarding-screen' }) %>
+
+    <div id="onboarding-screen" class="onboarding-container" tabindex="-1">
+        <div class="quiz-card">
+            <div class="progress-bar-container"><div class="progress-bar" id="quiz-progress"></div></div>
+            <div class="quiz-header">
+                <h1>Trải nghiệm Fit<span class="text-primary">AI</span></h1>
+                <p class="subtitle">Cá nhân hóa lộ trình sức khỏe của bạn</p>
+            </div>
+            <form id="onboarding-form" novalidate>
+                <div id="validation-summary" class="validation-summary" role="alert" aria-live="polite" hidden></div>
+                <div id="safety-feedback" class="safety-feedback" role="status" aria-live="polite" hidden></div>
+                <div class="quiz-step active" data-step="1">
+                    <h3>Thông tin cơ bản (1/2)</h3>
+                    <div class="form-group">
+                        <label>Giới tính</label>
+                        <div class="gender-options">
+                            <label class="option-box"><input type="radio" name="gender" value="Male" checked> Nam</label>
+                            <label class="option-box"><input type="radio" name="gender" value="Female"> Nữ</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="quiz-dob">Ngày sinh</label>
+                        <input type="date" id="quiz-dob" value="2000-01-01" required aria-describedby="quiz-dob-error">
+                        <span class="field-error" id="quiz-dob-error"></span>
+                    </div>
+                    <fieldset class="health-screening" aria-describedby="health-screening-help">
+                        <legend><i class="fa-solid fa-shield-heart" aria-hidden="true"></i> Kiểm tra an toàn trước khi tiếp tục</legend>
+                        <p class="subtitle" id="health-screening-help">FitAI chỉ tạo kế hoạch tự động cho người trưởng thành không thuộc nhóm cần chăm sóc chuyên môn. Hãy chọn tất cả điều đúng với bạn.</p>
+                        <label><input type="checkbox" id="health-pregnant"> Tôi đang mang thai</label>
+                        <label><input type="checkbox" id="health-breastfeeding"> Tôi đang cho con bú</label>
+                        <label><input type="checkbox" id="health-eating-disorder"> Tôi đang có hoặc từng có rối loạn ăn uống</label>
+                        <label><input type="checkbox" id="health-clinician-supervised"> Tôi có bệnh, dùng thuốc hoặc đang theo kế hoạch của bác sĩ</label>
+                        <small>Thông tin này chỉ dùng để quyết định FitAI có nên tạo mục tiêu calorie hay không; đây không phải chẩn đoán y khoa.</small>
+                    </fieldset>
+                    <div class="form-group">
+                        <label for="quiz-height">Chiều cao (cm)</label>
+                        <input type="number" id="quiz-height" value="170" min="120" max="230" step="0.1" required aria-describedby="quiz-height-error">
+                        <span class="field-error" id="quiz-height-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="quiz-weight">Cân nặng hiện tại (kg)</label>
+                        <input type="number" id="quiz-weight" value="68" min="35" max="300" step="0.1" required aria-describedby="quiz-weight-error">
+                        <span class="field-error" id="quiz-weight-error"></span>
+                    </div>
+                </div>
+                <div class="quiz-step" data-step="2">
+                    <h3>Vận động và dị ứng (2/2)</h3>
+                    <div class="form-group">
+                        <label for="work-activity">Mức độ vận động</label>
+                        <select id="work-activity" required aria-describedby="work-activity-error">
+                            <option value="sedentary">Ít vận động (văn phòng / ngồi nhiều)</option>
+                            <option value="lightly">Vận động nhẹ (đi lại thường xuyên)</option>
+                            <option value="moderately">Vận động vừa (lao động thể chất / thể thao)</option>
+                        </select>
+                        <span class="field-error" id="work-activity-error"></span>
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Dị ứng thực phẩm (có thể chọn nhiều)</label>
+                        <div class="allergy-grid">
+                            <button type="button" class="allergy-chip" data-allergy="seafood" aria-pressed="false">Hải sản</button>
+                            <button type="button" class="allergy-chip" data-allergy="peanuts" aria-pressed="false">Đậu phộng</button>
+                            <button type="button" class="allergy-chip" data-allergy="milk" aria-pressed="false">Sữa / Lactose</button>
+                            <button type="button" class="allergy-chip" data-allergy="eggs" aria-pressed="false">Trứng</button>
+                            <button type="button" class="allergy-chip" data-allergy="gluten" aria-pressed="false">Gluten / Lúa mì</button>
+                            <button type="button" class="allergy-chip" data-allergy="soy" aria-pressed="false">Đậu nành</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="quiz-step" data-step="3">
+                    <h3>Thiết lập mục tiêu</h3>
+                    <div class="form-group">
+                        <label for="weight-goal">Mục tiêu cân nặng</label>
+                        <select id="weight-goal" required aria-describedby="weight-goal-error">
+                            <option value="lose">Giảm cân</option>
+                            <option value="maintain">Duy trì cân nặng</option>
+                            <option value="gain">Tăng cân</option>
+                        </select>
+                        <span class="field-error" id="weight-goal-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="target-weight">Cân nặng mục tiêu (kg)</label>
+                        <input type="number" id="target-weight" value="62" min="35" max="300" step="0.1" required aria-describedby="target-weight-error">
+                        <span class="field-error" id="target-weight-error"></span>
+                    </div>
+                </div>
+                <div class="quiz-step" data-step="4">
+                    <h3>Tóm tắt mục tiêu</h3>
+                    <div class="summary-report-box">
+                        <p><strong>Mục tiêu:</strong> <span id="rep-goal">...</span></p>
+                        <p><strong>Năng lượng duy trì:</strong> <span id="rep-maintenance-cal">--</span> kcal/ngày</p>
+                        <p><strong>Năng lượng mục tiêu:</strong> <span id="rep-cal">--</span> kcal/ngày</p>
+                        <p><strong>Điều chỉnh mỗi ngày:</strong> <span id="rep-adjustment-cal">--</span> kcal/ngày</p>
+                        <p><strong>Thay đổi ước tính mỗi tuần:</strong> <span id="rep-weekly-change">--</span> kg/tuần</p>
+                        <p><strong>Thời gian ước tính:</strong> <span id="rep-duration">--</span></p>
+                        <p><strong>Tuổi:</strong> <span id="rep-age">--</span></p>
+                        <p><strong>BMI:</strong> <span id="rep-bmi">--</span> <span id="rep-bmi-category"></span></p>
+                        <p><strong>BMR:</strong> <span id="rep-bmr">--</span> kcal/ngày</p>
+                        <p><strong>TDEE ước tính:</strong> <span id="rep-tdee">--</span> kcal/ngày</p>
+                        <small class="metric-disclaimer">Nhu cầu năng lượng và mức thay đổi cân nặng chỉ là ước tính. Hãy đánh giá kết quả thực tế bằng xu hướng cân nặng theo thời gian.</small>
+                    </div>
+                </div>
+                <div class="quiz-navigation">
+                    <button type="button" class="btn" id="prev-btn" style="display:none;">Quay lại</button>
+                    <button type="button" class="btn btn-primary" id="next-btn">Tiếp theo</button>
+                </div>
+            </form>
+
+            <div class="user-management-card">
+                <h3>Quản lý người dùng</h3>
+                <p>Màn hình thiết lập ban đầu hướng dẫn người dùng mới hoàn thiện hồ sơ.</p>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <strong id="stat-completed">0</strong>
+                        <span>Đã hoàn thành</span>
+                    </div>
+                    <div class="stat-box">
+                        <strong id="stat-guests">0</strong>
+                        <span>Khách</span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" id="continue-to-app-btn">Mở trang tổng quan</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="main-app-screen" style="display: none;">
+        
+        <%- include('../partials/app-header', { showDashboardActions: true }) %>
+
+        <div class="calendar-wrapper" id="app-calendar-bar">
+            <div class="weekly-calendar" id="dynamic-calendar"></div>
+        </div>
+
+        <main class="app-main-content" id="main-content" tabindex="-1">
+            <div class="content-max-width">
+                <div class="page-header">
+                    <h1>Tổng quan</h1>
+                    <p class="subtitle">Theo dõi năng lượng và các chất dinh dưỡng đa lượng mỗi ngày.</p>
+                </div>
+
+                <section class="section-card daily-focus-card" aria-labelledby="daily-focus-title">
+                    <div class="daily-focus-heading">
+                        <div><span class="daily-focus-eyebrow">HÔM NAY</span><h2 id="daily-focus-title">Việc tiếp theo của bạn</h2></div>
+                        <span id="daily-focus-progress" class="daily-focus-progress" role="status" aria-live="polite">Đang kiểm tra...</span>
+                    </div>
+                    <p id="daily-focus-message" class="subtitle">FitAI đang chọn những việc quan trọng nhất cho hôm nay.</p>
+                    <div id="daily-focus-list" class="daily-focus-list" aria-live="polite"></div>
+                </section>
+
+                <div class="section-card auth-overview-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <div>
+                            <h3 style="margin-bottom:6px;">Tài khoản</h3>
+                            <p style="color:var(--text-muted); font-size:13px;">Bạn có thể xem FitAI ở chế độ khách. Hãy đăng nhập để lưu và đồng bộ dữ liệu sức khỏe bằng Firebase.</p>
+                            <span id="account-status" class="streak-mini" style="margin-top:10px;"><i class="fa-solid fa-shield-halved"></i> Đang kết nối an toàn...</span>
+                        </div>
+                        <div id="overview-auth-actions" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <button type="button" class="btn btn-primary" id="overview-login-btn">Đăng nhập</button>
+                            <button class="btn" id="overview-logout-btn" style="display:none; background:#e74c3c; color:white;">Đăng xuất</button>
+                            <button class="btn" id="edit-questions-btn" style="background:#444; color:white;">Sửa thông tin</button>
+                        </div>
+                    </div>
+                    <div id="overview-auth-form" style="margin-top:15px; display:none;">
+                        <div class="input-field"><label for="overview-auth-email">Email</label><input type="email" id="overview-auth-email" autocomplete="email" placeholder="name@example.com"></div>
+                        <div class="input-field"><label for="overview-auth-password">Mật khẩu</label><input type="password" id="overview-auth-password" autocomplete="current-password" placeholder="••••••••"></div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button type="button" class="btn btn-primary" id="overview-signin-btn">Đăng nhập</button>
+                            <button type="button" class="btn" id="overview-signup-btn">Tạo tài khoản</button>
+                            <button type="button" class="btn btn-link reset-password-btn" data-email-input="overview-auth-email" data-status-output="overview-reset-status">Quên mật khẩu?</button>
+                        </div>
+                        <p id="overview-reset-status" class="auth-feedback" role="status" aria-live="polite" hidden></p>
+                    </div>
+                </div>
+
+                <div class="dashboard-main-grid">
+                    <div class="calorie-main-card">
+                        <div class="progress-ring-wrapper">
+                            <svg class="progress-ring" width="160" height="160">
+                                <circle class="progress-ring__background" stroke="#e0e0e0" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+                                <circle class="progress-ring__bar" id="calorie-progress-circle" stroke="#2ecc71" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+                            </svg>
+                            <div class="ring-center-text">
+                                <span class="big-number" id="dash-remaining-cal">--</span>
+                                <span class="lbl-under">kcal còn lại</span>
+                            </div>
+                        </div>
+                        <div class="calorie-summary-row">
+                            <div class="summary-item"><strong>Mục tiêu</strong><span id="dash-goal-cal">--</span></div>
+                            <div class="summary-line-divider"></div>
+                            <div class="summary-item"><strong>Đã nạp</strong><span id="dash-consumed-cal">0</span></div>
+                        </div>
+                    </div>
+
+                    <div class="macro-main-card">
+                        <h4 style="margin-bottom: 15px;">Mục tiêu dinh dưỡng hằng ngày</h4>
+                        <div class="macro-container">
+                            <div class="macro-bar-item">
+                                <div class="macro-lbl"><span>Chất đạm</span><span id="macro-p-val">0/--g</span></div>
+                                <div class="macro-progress-track"><div class="macro-progress-fill protein" style="width: 0%"></div></div>
+                            </div>
+                            <div class="macro-bar-item">
+                                <div class="macro-lbl"><span>Tinh bột</span><span id="macro-c-val">0/--g</span></div>
+                                <div class="macro-progress-track"><div class="macro-progress-fill carbs" style="width: 0%"></div></div>
+                            </div>
+                            <div class="macro-bar-item">
+                                <div class="macro-lbl"><span>Chất béo</span><span id="macro-f-val">0/--g</span></div>
+                                <div class="macro-progress-track"><div class="macro-progress-fill fats" style="width: 0%"></div></div>
+                            </div>
+                            <div class="macro-bar-item">
+                                <div class="macro-lbl"><span>Chất xơ</span><span id="macro-fiber-val">0/--g</span></div>
+                                <div class="macro-progress-track"><div class="macro-progress-fill fiber" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mini-status-grid">
+                    <div class="mini-card">
+                        <div class="mini-icon"><i class="fa-solid fa-weight-scale"></i></div>
+                        <div class="mini-info"><small>Cân nặng</small><strong id="dash-current-w">68 kg</strong></div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-icon" style="color: #3498db;"><i class="fa-solid fa-droplet"></i></div>
+                        <div class="mini-info"><small>Nước uống</small><strong>1.5 L / 2.5L</strong></div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-icon" style="color:#8e44ad;"><i class="fa-solid fa-chart-simple"></i></div>
+                        <div class="mini-info"><small>BMI</small><strong><span id="dash-bmi">--</span> <span id="dash-bmi-category"></span></strong></div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-icon" style="color:#e67e22;"><i class="fa-solid fa-fire-flame-simple"></i></div>
+                        <div class="mini-info"><small>BMR ước tính</small><strong><span id="dash-bmr">--</span> kcal/ngày</strong></div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-icon" style="color:#16a085;"><i class="fa-solid fa-bolt"></i></div>
+                        <div class="mini-info"><small>TDEE ước tính</small><strong><span id="dash-tdee">--</span> kcal/ngày</strong></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <%- include('../partials/bottom-nav', { activePage: 'overview' }) %>
+    </div>
+
+    <%- include('../partials/app-scripts') %>
+</body>
+</html>

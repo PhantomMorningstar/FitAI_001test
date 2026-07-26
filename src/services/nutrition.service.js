@@ -1,0 +1,159 @@
+const FDC_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
+const FDC_FOOD_URL = 'https://api.nal.usda.gov/fdc/v1/food';
+const MAX_QUERY_LENGTH = 100;
+
+const NUTRIENT_IDS = {
+  calories: [1008, 2047, 2048],
+  protein: [1003],
+  carbs: [1005],
+  fat: [1004],
+  fiber: [1079]
+};
+
+const round = (value, digits = 1) => Number(Number(value || 0).toFixed(digits));
+
+function validateSearchInput(query, grams) {
+  const normalizedQuery = String(query || '').trim().replace(/\s+/g, ' ');
+  const normalizedGrams = Number(grams ?? 100);
+  const errors = [];
+
+  if (normalizedQuery.length < 2 || normalizedQuery.length > MAX_QUERY_LENGTH) {
+    errors.push('Food name must contain between 2 and 100 characters.');
+  }
+  if (!Number.isFinite(normalizedGrams) || normalizedGrams < 1 || normalizedGrams > 2000) {
+    errors.push('Serving weight must be between 1 and 2000 grams.');
+  }
+
+  return { valid: errors.length === 0, errors, query: normalizedQuery, grams: normalizedGrams };
+}
+
+function nutrientValue(food, ids) {
+  const nutrient = (food.foodNutrients || []).find((item) => {
+    const nutrientId = item.nutrientId ?? item.nutrient?.id;
+    return ids.includes(Number(nutrientId));
+  });
+  return Number(nutrient?.value ?? nutrient?.amount ?? 0);
+}
+
+function normalizeFood(food, grams) {
+  const factor = grams / 100;
+  return {
+    fdcId: food.fdcId,
+    name: food.description,
+    dataType: food.dataType,
+    brandName: food.brandName || food.brandOwner || null,
+    gtinUpc: food.gtinUpc || null,
+    grams,
+    calories: Math.round(nutrientValue(food, NUTRIENT_IDS.calories) * factor),
+    protein: round(nutrientValue(food, NUTRIENT_IDS.protein) * factor),
+    carbs: round(nutrientValue(food, NUTRIENT_IDS.carbs) * factor),
+    fat: round(nutrientValue(food, NUTRIENT_IDS.fat) * factor),
+    fiber: round(nutrientValue(food, NUTRIENT_IDS.fiber) * factor),
+    source: 'USDA FoodData Central'
+  };
+}
+
+function normalizePortions(food) {
+  const portions = (food.foodPortions || [])
+    .map((portion) => {
+      const amount = Number(portion.amount || 1);
+      const unit = portion.measureUnit?.name || portion.measureUnit?.abbreviation || '';
+      const modifier = portion.modifier || portion.portionDescription || '';
+      const gramWeight = Number(portion.gramWeight);
+      if (!Number.isFinite(gramWeight) || gramWeight <= 0) return null;
+      return {
+        id: portion.id || `${amount}-${unit}-${modifier}-${gramWeight}`,
+        label: [amount, unit, modifier].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+        gramWeight: round(gramWeight)
+      };
+    })
+    .filter(Boolean);
+
+  if (Number.isFinite(Number(food.servingSize)) && String(food.servingSizeUnit || '').toLowerCase() === 'g') {
+    portions.unshift({
+      id: 'label-serving',
+      label: '1 label serving',
+      gramWeight: round(food.servingSize)
+    });
+  }
+
+  return portions.filter((portion, index, all) =>
+    all.findIndex((candidate) => candidate.label === portion.label && candidate.gramWeight === portion.gramWeight) === index
+  );
+}
+
+function validateFdcId(value) {
+  const fdcId = Number(value);
+  if (!Number.isSafeInteger(fdcId) || fdcId <= 0) {
+    const error = new Error('A valid USDA FDC ID is required.');
+    error.statusCode = 422;
+    throw error;
+  }
+  return fdcId;
+}
+
+async function fetchFoodDetails({ fdcId, grams = 100, apiKey, fetchImpl = fetch }) {
+  const validFdcId = validateFdcId(fdcId);
+  const input = validateSearchInput('food', grams);
+  if (!input.valid) {
+    const error = new Error(input.errors.join(' '));
+    error.statusCode = 422;
+    throw error;
+  }
+  const response = await fetchImpl(
+    `${FDC_FOOD_URL}/${validFdcId}?api_key=${encodeURIComponent(apiKey)}`,
+    { signal: AbortSignal.timeout(8000) }
+  );
+  if (!response.ok) {
+    const error = new Error(response.status === 404
+      ? 'The selected USDA food record no longer exists.'
+      : 'The nutrition data service is temporarily unavailable.');
+    error.statusCode = response.status === 404 ? 404 : 502;
+    throw error;
+  }
+  const food = await response.json();
+  return {
+    food: normalizeFood(food, input.grams),
+    portions: normalizePortions(food)
+  };
+}
+
+async function searchFoods({ query, grams = 100, apiKey, fetchImpl = fetch }) {
+  const input = validateSearchInput(query, grams);
+  if (!input.valid) {
+    const error = new Error(input.errors.join(' '));
+    error.statusCode = 422;
+    throw error;
+  }
+
+  const response = await fetchImpl(`${FDC_SEARCH_URL}?api_key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: input.query,
+      dataType: ['Foundation', 'Survey (FNDDS)', 'Branded', 'SR Legacy'],
+      pageSize: 8
+    }),
+    signal: AbortSignal.timeout(8000)
+  });
+
+  if (!response.ok) {
+    const error = new Error(response.status === 429
+      ? 'The nutrition data service rate limit was reached. Please try again later.'
+      : 'The nutrition data service is temporarily unavailable.');
+    error.statusCode = response.status === 429 ? 429 : 502;
+    throw error;
+  }
+
+  const payload = await response.json();
+  return (payload.foods || []).map((food) => normalizeFood(food, input.grams));
+}
+
+module.exports = {
+  fetchFoodDetails,
+  normalizeFood,
+  normalizePortions,
+  searchFoods,
+  validateFdcId,
+  validateSearchInput
+};

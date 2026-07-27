@@ -48,7 +48,7 @@ test('runtime authentication, activity, camera, and roadmap messages translate',
     ['Đã đăng nhập: user@example.com — email chưa xác minh', 'Signed in: user@example.com — email not verified'],
     ['Mức vận động quan sát phù hợp với hồ sơ. Tiến độ vận động tuần: 120/150 phút.', 'Observed activity matches the profile. Weekly activity progress: 120/150 minutes.'],
     ['Độ tin cậy của gợi ý: 82%.', 'Suggestion confidence: 82%.'],
-    ['Tìm thấy 8 kết quả USDA đã xác minh. Hãy chọn bản ghi và khẩu phần gần đúng nhất.', 'Found 8 verified USDA results. Choose the closest record and portion.'],
+    ['Tìm thấy 8 kết quả USDA. Hãy chọn bản ghi và khẩu phần gần đúng nhất.', 'Found 8 USDA results. Choose the closest record and portion.'],
     ['Giai đoạn 2: Xây dựng dữ liệu nền đáng tin cậy', 'Phase 2: Build a reliable baseline'],
     ['Email chưa xác minh: user@example.com', 'Unverified email: user@example.com']
   ];

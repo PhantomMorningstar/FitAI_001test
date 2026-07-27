@@ -5,7 +5,7 @@
 | Item | Current status | Completion criteria |
 |---|---|---|
 | Deploy HTTPS and monitoring | Code ready; deployment pending | Cloud Run HTTPS URL, `/healthz` works, Cloud Logging receives a controlled test error |
-| Rotate exposed USDA key | Action required | Revoke the previously shared key and store the replacement in Secret Manager |
+| Rotate exposed USDA key | Action required | Revoke the previously shared key and store the replacement only in `.env` or Secret Manager |
 | Protect Firestore in production | Code ready; deployment verification required | Emulator security suite passes and deployed rules match the repository |
 | Protect server APIs from abuse | Done in code | Nutrition/profile/chat/photo endpoints enforce request-size and rate limits |
 | Privacy policy and explicit consent | Not done | Bilingual policy explains Firebase, Gemini, USDA, retention, deletion, and health-data limits |

@@ -35,7 +35,7 @@
         'Tiến độ': 'Progress',
         'Thời gian ước tính': 'Estimated time',
         'Nhận diện món ăn': 'Food recognition',
-        'Tra cứu khẩu phần đã cân bằng dữ liệu thành phần thực phẩm USDA.': 'Look up measured portions using USDA food composition data.',
+        'Tra cứu khẩu phần đã cân bằng dữ liệu thành phần thực phẩm USDA FoodData Central.': 'Look up measured portions using USDA FoodData Central composition data.',
         'Chụp hoặc tải ảnh món ăn lên': 'Take or upload a meal photo',
         'Tải ảnh lên': 'Upload image',
         'Phân tích ảnh bằng AI': 'Analyze photo with AI',
@@ -46,6 +46,8 @@
         'Kết quả dinh dưỡng': 'Nutrition result',
         'Năng lượng:': 'Calories:',
         'Chọn kết quả gần đúng nhất': 'Choose the closest match',
+        'Chọn khẩu phần trên nhãn': 'Choose a label serving',
+        'USDA cung cấp dữ liệu tham khảo cho thực phẩm phổ biến và thực phẩm đóng gói. Hãy chọn đúng bản ghi, cân khẩu phần và đối chiếu nhãn khi có.': 'USDA provides reference data for common and packaged foods. Choose the correct record, weigh the portion, and verify the label when available.',
         'Chọn khẩu phần USDA': 'Choose a USDA portion',
         'Xác nhận gợi ý này': 'Confirm this suggestion',
         '+ Thêm vào nhật ký': '+ Add to diary',
@@ -192,7 +194,17 @@
         'độ tin cậy': 'confidence',
         'Hãy nhập tên món có ít nhất 2 ký tự.': 'Enter a food name with at least 2 characters.',
         'Đang tìm trên USDA FoodData Central...': 'Searching USDA FoodData Central...',
+        'Không tìm thấy món phù hợp. Hãy thử tên tiếng Anh ngắn và tổng quát hơn.': 'No matching food found. Try a shorter, more general English name.',
         'Không thể tìm kiếm thực phẩm.': 'Unable to search foods.',
+        'Bản ghi USDA không hợp lệ. Hãy tìm và chọn lại món ăn.': 'The USDA record is invalid. Search and select the food again.',
+        'Bản ghi USDA này không còn tồn tại. Hãy tìm và chọn một kết quả khác.': 'This USDA record no longer exists. Search and choose another result.',
+        'Không thể kết nối USDA lúc này. Hãy kiểm tra kết nối hoặc thử lại sau.': 'USDA is currently unavailable. Check your connection or try again later.',
+        'USDA đang giới hạn số lần tra cứu. Hãy đợi một lúc rồi thử lại.': 'USDA is limiting requests. Wait a moment and try again.',
+        'Nhận diện ảnh chưa được cấu hình. Hãy kiểm tra GEMINI_API_KEY trên máy chủ.': 'Photo recognition is not configured. Check GEMINI_API_KEY on the server.',
+        'Gemini đang giới hạn số lần phân tích. Hãy đợi một lúc rồi thử lại.': 'Gemini is limiting analysis requests. Wait a moment and try again.',
+        'Không thể kết nối Gemini lúc này. Hãy nhập tên món bằng tay hoặc thử lại sau.': 'Gemini is currently unavailable. Enter the food name manually or try again later.',
+        'Gemini chưa nhận diện được món ăn. Hãy thử ảnh rõ hơn hoặc nhập tên món bằng tay.': 'Gemini could not identify the food. Try a clearer photo or enter the name manually.',
+        'Không thể phân tích ảnh này. Hãy thử lại hoặc nhập tên món bằng tay.': 'Unable to analyze this photo. Try again or enter the food name manually.',
         'Không tìm thấy món phù hợp. Hãy thử tên tổng quát hơn.': 'No matching food was found. Try a more general name.',
         'Kế hoạch này chưa thể được sử dụng an toàn.': 'This plan cannot be used safely yet.',
         'Hãy xem lại các lưu ý an toàn sau.': 'Please review these safety notes.',
@@ -358,8 +370,6 @@
         'Đã gửi lại email xác minh. Hãy kiểm tra cả thư rác.': 'Verification email resent. Check your spam folder too.',
         'Đang tối ưu ảnh để phân tích...': 'Optimizing the image for analysis...',
         'Ảnh đã sẵn sàng. Nhấn “Phân tích ảnh bằng AI” để nhận gợi ý.': 'Image ready. Select “Analyze photo with AI” to get suggestions.',
-        'Đang tải khẩu phần và dữ liệu dinh dưỡng USDA...': 'Loading USDA portions and nutrition data...',
-        'Không thể tải chi tiết thực phẩm USDA.': 'Unable to load USDA food details.',
         'Máy chủ trả về dữ liệu không hợp lệ. Hãy khởi động lại npm run dev và thử lại.': 'The server returned invalid data. Restart npm run dev and try again.',
         'Đã xác nhận tên món. Hãy nhập khối lượng đã cân rồi tra cứu USDA.': 'Food name confirmed. Enter the measured weight, then search USDA.',
         'AI đang kiểm tra món ăn trong ảnh...': 'AI is analyzing the food in the image...',
@@ -369,7 +379,6 @@
         'Độ tin cậy vừa; cần xác nhận trước khi tiếp tục.': 'Medium confidence; confirm before continuing.',
         'Độ tin cậy cao nhưng vẫn cần bạn xác nhận.': 'High confidence, but your confirmation is still required.',
         'Hãy nhập tên món có ít nhất 2 ký tự.': 'Enter a food name with at least 2 characters.',
-        'Đang tìm trên USDA FoodData Central...': 'Searching USDA FoodData Central...',
         'Không thể tìm kiếm thực phẩm.': 'Unable to search for food.',
         'Không tìm thấy món phù hợp. Hãy thử tên tổng quát hơn.': 'No matching food found. Try a more general name.',
         'Hãy chọn hôm nay hoặc một ngày trước đó.': 'Choose today or an earlier date.',
@@ -444,11 +453,11 @@
         ,[/^Xóa “(.+)” khỏi nhật ký của ngày này\?$/, 'Delete “$1” from this date’s diary?']
         ,[/^Mức vận động quan sát là (.+), còn hồ sơ là (.+)\. Hãy xem lại trước khi đổi mục tiêu năng lượng\.$/, 'Observed activity is $1, while the profile says $2. Review this before changing the calorie target.']
         ,[/^Mức vận động quan sát phù hợp với hồ sơ\. Tiến độ vận động tuần: (\d+)\/150 phút\.$/, 'Observed activity matches the profile. Weekly activity progress: $1/150 minutes.']
-        ,[/^Đã tải bản ghi (.+) được xác minh từ USDA\.$/, 'Loaded a verified USDA $1 record.']
+        ,[/^Đã tải bản ghi (.+) từ USDA\. Hãy chọn đúng thực phẩm và kiểm tra khẩu phần\.$/, 'Loaded a USDA $1 record. Choose the correct food and check the portion.']
         ,[/^Khẩu phần tự nhập — ([\d.]+) g$/, 'Custom serving — $1 g']
         ,[/^Độ tin cậy của gợi ý: (\d+)%\.$/, 'Suggestion confidence: $1%.']
         ,[/^(.+) — độ tin cậy (\d+)%$/, '$1 — $2% confidence']
-        ,[/^Tìm thấy (\d+) kết quả USDA đã xác minh\. Hãy chọn bản ghi và khẩu phần gần đúng nhất\.$/, 'Found $1 verified USDA results. Choose the closest record and portion.']
+        ,[/^Tìm thấy (\d+) kết quả USDA\. Hãy chọn bản ghi và khẩu phần gần đúng nhất\.$/, 'Found $1 USDA results. Choose the closest record and portion.']
         ,[/^Đã thêm (.+) vào nhật ký\.$/, 'Added $1 to the diary.']
         ,[/^Bạn: (.+)$/, 'You: $1']
     ]);

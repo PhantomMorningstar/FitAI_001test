@@ -10,7 +10,9 @@ const recognize = async (req, res) => {
     });
     return res.json(result);
   } catch (error) {
-    return res.status(error.statusCode || 500).json({ error: error.message || 'Unable to analyze this image.' });
+    return res.status(error.statusCode || 500).json({
+      error: error.message || 'Không thể phân tích ảnh này. Hãy thử lại hoặc nhập tên món bằng tay.'
+    });
   }
 };
 

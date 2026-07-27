@@ -11,7 +11,7 @@ const search = async (req, res) => {
     return res.json({ foods, source: 'USDA FoodData Central' });
   } catch (error) {
     return res.status(error.statusCode || 500).json({
-      error: error.message || 'Unable to search nutrition data.'
+      error: error.message || 'Không thể tìm kiếm dữ liệu dinh dưỡng. Hãy thử lại.'
     });
   }
 };
@@ -26,7 +26,7 @@ const details = async (req, res) => {
     return res.json({ ...result, source: 'USDA FoodData Central' });
   } catch (error) {
     return res.status(error.statusCode || 500).json({
-      error: error.message || 'Unable to load nutrition details.'
+      error: error.message || 'Không thể tải chi tiết dinh dưỡng. Hãy thử lại.'
     });
   }
 };

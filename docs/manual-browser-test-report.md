@@ -1,6 +1,6 @@
 # Báo cáo kiểm thử trình duyệt thủ công
 
-- Ngày kiểm thử: 2026-07-25
+- Ngày cập nhật báo cáo: 2026-07-26
 - Ứng dụng: FitAI
 - URL: `http://localhost:3000`
 - Trình duyệt: Microsoft Edge
@@ -33,7 +33,15 @@ kiểm thử hồi quy để ngăn lỗi tái diễn.
 ## Xác minh tự động sau sửa lỗi
 
 - `npm run check`: Pass
-- `npm test`: 138/138 Pass
+- `npm test`: 150/150 Pass
+
+## Kiểm tra bổ sung trước bản nộp
+
+- Camera sử dụng Gemini để gợi ý tên và USDA để lấy dữ liệu dinh dưỡng.
+- Khi Gemini lỗi, người dùng vẫn có thể nhập tên món bằng tay.
+- Thông báo lỗi USDA và Gemini hướng dẫn người dùng thử lại thay vì hiển thị mã
+  lỗi kỹ thuật.
+- Nguồn dữ liệu dinh dưỡng của Camera đã được thống nhất là USDA FoodData Central.
 
 ## Trạng thái mục tiêu
 

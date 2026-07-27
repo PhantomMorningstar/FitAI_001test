@@ -1,5 +1,13 @@
 # FitAI
 
+For the graduation presentation, follow [DEMO.md](DEMO.md).
+
+Technical references:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Health and technical limitations](docs/LIMITATIONS.md)
+- [Manual browser test report](docs/manual-browser-test-report.md)
+
 FitAI is a Node.js application for tracking nutrition and weight-management progress. The current product is an early-stage prototype built with Express, EJS, Firebase, and browser-side JavaScript.
 
 ## Requirements
@@ -7,7 +15,7 @@ FitAI is a Node.js application for tracking nutrition and weight-management prog
 - Node.js 20 or newer
 - npm
 - A Firebase project with appropriate Authentication and Firestore security rules
-- A USDA FoodData Central API key for production nutrition lookup
+- A USDA FoodData Central API key for nutrition lookup
 
 ## Getting started
 
@@ -21,7 +29,7 @@ Open `http://localhost:3000`.
 
 ## Nutrition data
 
-Food lookup uses USDA FoodData Central on the server across Foundation, FNDDS survey, Branded, and SR Legacy records. After a user selects a search result, the server retrieves its Food Details record by `fdcId` and exposes household or label portions when USDA provides them. The browser receives nutrient results but never receives the API key. `DEMO_KEY` works for initial development with a low request limit; create your own data.gov key and set `FDC_API_KEY` in `.env` before production use.
+Food lookup uses USDA FoodData Central on the server across Foundation, FNDDS survey, Branded, and SR Legacy records. After a user selects a result, the server retrieves its Food Details record by `fdcId` and exposes household or label portions when available. The API key remains server-side. Set `FDC_API_KEY` in `.env`; `DEMO_KEY` is suitable only for limited development.
 
 Values are calculated from the selected food's nutrients per 100 g and the portion weight entered by the user. A meal photo is only a visual reference; users must choose a database match and provide a measured portion.
 
@@ -122,4 +130,4 @@ npm run firebase:deploy:firestore
 
 ## Important product note
 
-Camera and food-assistant nutrition values come from USDA FoodData Central. They remain estimates that depend on selecting the correct database record and measuring the portion accurately.
+Camera and food-assistant nutrition values come from USDA FoodData Central. They remain estimates that depend on selecting the correct database record and measuring the portion accurately. Manual label entry remains available when the external service is unavailable.

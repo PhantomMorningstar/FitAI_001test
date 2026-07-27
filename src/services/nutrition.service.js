@@ -16,22 +16,19 @@ function validateSearchInput(query, grams) {
   const normalizedQuery = String(query || '').trim().replace(/\s+/g, ' ');
   const normalizedGrams = Number(grams ?? 100);
   const errors = [];
-
   if (normalizedQuery.length < 2 || normalizedQuery.length > MAX_QUERY_LENGTH) {
     errors.push('Food name must contain between 2 and 100 characters.');
   }
   if (!Number.isFinite(normalizedGrams) || normalizedGrams < 1 || normalizedGrams > 2000) {
     errors.push('Serving weight must be between 1 and 2000 grams.');
   }
-
   return { valid: errors.length === 0, errors, query: normalizedQuery, grams: normalizedGrams };
 }
 
 function nutrientValue(food, ids) {
-  const nutrient = (food.foodNutrients || []).find((item) => {
-    const nutrientId = item.nutrientId ?? item.nutrient?.id;
-    return ids.includes(Number(nutrientId));
-  });
+  const nutrient = (food.foodNutrients || []).find((item) =>
+    ids.includes(Number(item.nutrientId ?? item.nutrient?.id))
+  );
   return Number(nutrient?.value ?? nutrient?.amount ?? 0);
 }
 
@@ -54,21 +51,18 @@ function normalizeFood(food, grams) {
 }
 
 function normalizePortions(food) {
-  const portions = (food.foodPortions || [])
-    .map((portion) => {
-      const amount = Number(portion.amount || 1);
-      const unit = portion.measureUnit?.name || portion.measureUnit?.abbreviation || '';
-      const modifier = portion.modifier || portion.portionDescription || '';
-      const gramWeight = Number(portion.gramWeight);
-      if (!Number.isFinite(gramWeight) || gramWeight <= 0) return null;
-      return {
-        id: portion.id || `${amount}-${unit}-${modifier}-${gramWeight}`,
-        label: [amount, unit, modifier].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
-        gramWeight: round(gramWeight)
-      };
-    })
-    .filter(Boolean);
-
+  const portions = (food.foodPortions || []).map((portion) => {
+    const amount = Number(portion.amount || 1);
+    const unit = portion.measureUnit?.name || portion.measureUnit?.abbreviation || '';
+    const modifier = portion.modifier || portion.portionDescription || '';
+    const gramWeight = Number(portion.gramWeight);
+    if (!Number.isFinite(gramWeight) || gramWeight <= 0) return null;
+    return {
+      id: portion.id || `${amount}-${unit}-${modifier}-${gramWeight}`,
+      label: [amount, unit, modifier].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+      gramWeight: round(gramWeight)
+    };
+  }).filter(Boolean);
   if (Number.isFinite(Number(food.servingSize)) && String(food.servingSizeUnit || '').toLowerCase() === 'g') {
     portions.unshift({
       id: 'label-serving',
@@ -76,16 +70,17 @@ function normalizePortions(food) {
       gramWeight: round(food.servingSize)
     });
   }
-
   return portions.filter((portion, index, all) =>
-    all.findIndex((candidate) => candidate.label === portion.label && candidate.gramWeight === portion.gramWeight) === index
+    all.findIndex((candidate) =>
+      candidate.label === portion.label && candidate.gramWeight === portion.gramWeight
+    ) === index
   );
 }
 
 function validateFdcId(value) {
   const fdcId = Number(value);
   if (!Number.isSafeInteger(fdcId) || fdcId <= 0) {
-    const error = new Error('A valid USDA FDC ID is required.');
+    const error = new Error('Bản ghi USDA không hợp lệ. Hãy tìm và chọn lại món ăn.');
     error.statusCode = 422;
     throw error;
   }
@@ -106,16 +101,13 @@ async function fetchFoodDetails({ fdcId, grams = 100, apiKey, fetchImpl = fetch 
   );
   if (!response.ok) {
     const error = new Error(response.status === 404
-      ? 'The selected USDA food record no longer exists.'
-      : 'The nutrition data service is temporarily unavailable.');
+      ? 'Bản ghi USDA này không còn tồn tại. Hãy tìm và chọn một kết quả khác.'
+      : 'Không thể kết nối USDA lúc này. Hãy kiểm tra kết nối hoặc thử lại sau.');
     error.statusCode = response.status === 404 ? 404 : 502;
     throw error;
   }
   const food = await response.json();
-  return {
-    food: normalizeFood(food, input.grams),
-    portions: normalizePortions(food)
-  };
+  return { food: normalizeFood(food, input.grams), portions: normalizePortions(food) };
 }
 
 async function searchFoods({ query, grams = 100, apiKey, fetchImpl = fetch }) {
@@ -125,7 +117,6 @@ async function searchFoods({ query, grams = 100, apiKey, fetchImpl = fetch }) {
     error.statusCode = 422;
     throw error;
   }
-
   const response = await fetchImpl(`${FDC_SEARCH_URL}?api_key=${encodeURIComponent(apiKey)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -136,15 +127,13 @@ async function searchFoods({ query, grams = 100, apiKey, fetchImpl = fetch }) {
     }),
     signal: AbortSignal.timeout(8000)
   });
-
   if (!response.ok) {
     const error = new Error(response.status === 429
-      ? 'The nutrition data service rate limit was reached. Please try again later.'
-      : 'The nutrition data service is temporarily unavailable.');
+      ? 'USDA đang giới hạn số lần tra cứu. Hãy đợi một lúc rồi thử lại.'
+      : 'Không thể kết nối USDA lúc này. Hãy kiểm tra kết nối hoặc thử lại sau.');
     error.statusCode = response.status === 429 ? 429 : 502;
     throw error;
   }
-
   const payload = await response.json();
   return (payload.foods || []).map((food) => normalizeFood(food, input.grams));
 }

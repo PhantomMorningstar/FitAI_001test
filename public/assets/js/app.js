@@ -1601,7 +1601,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (analysisCarbs) analysisCarbs.innerText = `${result.carbs} g`;
         if (analysisFat) analysisFat.innerText = `${result.fat} g`;
         if (analysisFiber) analysisFiber.innerText = `${result.fiber} g`;
-        if (analysisSource) analysisSource.textContent = `${result.grams} g • ${result.source} • FDC ${result.fdcId}`;
+        if (analysisSource) {
+            analysisSource.textContent = result.fdcId
+                ? `${result.grams} g • ${result.source} • FDC ${result.fdcId}`
+                : `${result.grams} g • ${result.source}`;
+        }
         if (addFoodBtn) addFoodBtn.disabled = false;
         if (analysisResult) analysisResult.style.display = 'flex';
     }
@@ -1661,7 +1665,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 foodPortionLabel.style.display = 'none';
             }
         }
-        if (foodSearchStatus) foodSearchStatus.textContent = `Đã tải bản ghi ${food.dataType} được xác minh từ USDA.`;
+        if (foodSearchStatus) foodSearchStatus.textContent = `Đã tải bản ghi ${food.dataType} từ USDA. Hãy chọn đúng thực phẩm và kiểm tra khẩu phần.`;
     }
 
     if (foodResultSelect) {
@@ -1703,9 +1707,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function applyVisionCandidate(candidate) {
         if (!candidate || !foodSearchQuery) return;
-        foodSearchQuery.value = candidate.preparation && candidate.preparation !== 'unknown'
-            ? `${candidate.preparation} ${candidate.name}`
-            : candidate.name;
+        foodSearchQuery.value = candidate.name;
     }
 
     if (visionFoodCandidates) {
@@ -1795,7 +1797,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const payload = await readJsonResponse(response);
                 if (!response.ok) throw new Error(payload.error || 'Không thể tìm kiếm thực phẩm.');
                 foodSearchResults = payload.foods || [];
-                if (!foodSearchResults.length) throw new Error('Không tìm thấy món phù hợp. Hãy thử tên tổng quát hơn.');
+                if (!foodSearchResults.length) throw new Error('Không tìm thấy món phù hợp. Hãy thử tên tiếng Anh ngắn và tổng quát hơn.');
 
                 if (foodResultSelect) {
                     foodResultSelect.replaceChildren(...foodSearchResults.map((food, index) => {
@@ -1806,7 +1808,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }));
                 }
                 await loadSelectedFoodDetails(foodSearchResults[0], grams);
-                if (foodSearchStatus) foodSearchStatus.textContent = `Tìm thấy ${foodSearchResults.length} kết quả USDA đã xác minh. Hãy chọn bản ghi và khẩu phần gần đúng nhất.`;
+                if (foodSearchStatus) foodSearchStatus.textContent = `Tìm thấy ${foodSearchResults.length} kết quả USDA. Hãy chọn bản ghi và khẩu phần gần đúng nhất.`;
             } catch (error) {
                 resetFoodAnalysis();
                 if (foodSearchStatus) foodSearchStatus.textContent = error.message;
@@ -1830,7 +1832,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     fiber: latestFoodAnalysis.fiber,
                     servingGrams: latestFoodAnalysis.grams,
                     nutritionSource: latestFoodAnalysis.source,
-                    fdcId: latestFoodAnalysis.fdcId,
+                    fdcId: latestFoodAnalysis.fdcId || null,
                     dataType: latestFoodAnalysis.dataType,
                     brandName: latestFoodAnalysis.brandName || null,
                     gtinUpc: latestFoodAnalysis.gtinUpc || null

@@ -57,6 +57,5 @@ test('API routes use a smaller default JSON limit and a dedicated photo limit', 
 test('example environment does not contain a concrete USDA key', () => {
   const example = fs.readFileSync(path.join(__dirname, '../.env.example'), 'utf8');
   const value = example.match(/^FDC_API_KEY=(.+)$/m)?.[1] || '';
-  assert.ok(value.startsWith('your_'));
   assert.equal(value, 'your_data_gov_fooddata_central_key');
 });

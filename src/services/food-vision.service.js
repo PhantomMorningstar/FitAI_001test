@@ -50,7 +50,7 @@ async function recognizeFood({ imageDataUrl, apiKey, model, fetchImpl = fetch })
     throw error;
   }
   if (!apiKey) {
-    const error = new Error('AI photo recognition is not configured. Add GEMINI_API_KEY to .env.');
+    const error = new Error('Nhận diện ảnh chưa được cấu hình. Hãy kiểm tra GEMINI_API_KEY trên máy chủ.');
     error.statusCode = 503;
     throw error;
   }
@@ -110,8 +110,8 @@ async function recognizeFood({ imageDataUrl, apiKey, model, fetchImpl = fetch })
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(response.status === 429
-      ? 'AI recognition rate limit was reached. Please try again later.'
-      : (payload.error?.message || 'Gemini photo recognition is temporarily unavailable.'));
+      ? 'Gemini đang giới hạn số lần phân tích. Hãy đợi một lúc rồi thử lại.'
+      : 'Không thể kết nối Gemini lúc này. Hãy nhập tên món bằng tay hoặc thử lại sau.');
     error.statusCode = response.status === 429 ? 429 : 502;
     throw error;
   }
@@ -125,7 +125,7 @@ async function recognizeFood({ imageDataUrl, apiKey, model, fetchImpl = fetch })
   try {
     return normalizeRecognitionResult(JSON.parse(outputText));
   } catch {
-    const error = new Error('AI returned an invalid food-recognition result. Please try again.');
+    const error = new Error('Gemini chưa nhận diện được món ăn. Hãy thử ảnh rõ hơn hoặc nhập tên món bằng tay.');
     error.statusCode = 502;
     throw error;
   }

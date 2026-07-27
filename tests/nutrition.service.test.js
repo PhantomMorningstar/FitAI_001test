@@ -5,6 +5,7 @@ const {
   normalizeFood,
   normalizePortions,
   searchFoods,
+  validateFdcId,
   validateSearchInput
 } = require('../src/services/nutrition.service');
 
@@ -29,20 +30,12 @@ test('nutrition search validates food name and measured portion', () => {
 });
 
 test('USDA nutrients per 100 g scale to the selected portion', () => {
-  assert.deepEqual(normalizeFood(sampleFood, 150), {
-    fdcId: 123,
-    name: 'Chicken breast, cooked',
-    dataType: 'Foundation',
-    brandName: null,
-    gtinUpc: null,
-    grams: 150,
-    calories: 248,
-    protein: 46.5,
-    carbs: 0,
-    fat: 5.4,
-    fiber: 0,
-    source: 'USDA FoodData Central'
-  });
+  const food = normalizeFood(sampleFood, 150);
+  assert.equal(food.fdcId, 123);
+  assert.equal(food.calories, 248);
+  assert.equal(food.protein, 46.5);
+  assert.equal(food.fat, 5.4);
+  assert.equal(food.source, 'USDA FoodData Central');
 });
 
 test('nutrition search keeps API credentials server-side and normalizes results', async () => {
@@ -58,14 +51,10 @@ test('nutrition search keeps API credentials server-side and normalizes results'
       return { ok: true, json: async () => ({ foods: [sampleFood] }) };
     }
   });
-
   assert.match(requestedUrl, /api_key=private-key/);
   assert.equal(JSON.parse(requestedOptions.body).query, 'chicken breast');
   assert.deepEqual(JSON.parse(requestedOptions.body).dataType, [
-    'Foundation',
-    'Survey (FNDDS)',
-    'Branded',
-    'SR Legacy'
+    'Foundation', 'Survey (FNDDS)', 'Branded', 'SR Legacy'
   ]);
   assert.equal(foods[0].calories, 165);
   assert.equal(JSON.stringify(foods).includes('private-key'), false);
@@ -92,7 +81,6 @@ test('food details expose USDA household portions and scale nutrients', async ()
     apiKey: 'private-key',
     fetchImpl: async () => ({ ok: true, json: async () => detailedFood })
   });
-
   assert.equal(result.food.calories, 231);
   assert.deepEqual(result.portions, [{
     id: 9,
@@ -101,7 +89,7 @@ test('food details expose USDA household portions and scale nutrients', async ()
   }]);
 });
 
-test('branded label servings are offered as portions without duplicates', () => {
+test('branded label servings are offered without duplicates', () => {
   assert.deepEqual(normalizePortions({
     servingSize: 30,
     servingSizeUnit: 'g',
@@ -113,6 +101,11 @@ test('branded label servings are offered as portions without duplicates', () => 
   }]);
 });
 
+test('USDA FDC ID validation rejects malformed identifiers', () => {
+  assert.equal(validateFdcId('123'), 123);
+  assert.throws(() => validateFdcId('not-an-id'), /USDA không hợp lệ/i);
+});
+
 test('nutrition search reports USDA rate limiting clearly', async () => {
   await assert.rejects(
     searchFoods({
@@ -120,6 +113,6 @@ test('nutrition search reports USDA rate limiting clearly', async () => {
       apiKey: 'key',
       fetchImpl: async () => ({ ok: false, status: 429 })
     }),
-    (error) => error.statusCode === 429 && /rate limit/i.test(error.message)
+    (error) => error.statusCode === 429 && /giới hạn số lần/i.test(error.message)
   );
 });

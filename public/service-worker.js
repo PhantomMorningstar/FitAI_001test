@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'fitai-shell-v17';
+const CACHE_VERSION = 'fitai-shell-v23';
 const APP_SHELL = [
   '/',
   '/roadmap',

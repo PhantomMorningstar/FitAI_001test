@@ -7,7 +7,7 @@
             <div class="content-max-width">
                 <div class="page-header">
                     <h1>Nhận diện món ăn</h1>
-                    <p class="subtitle">Tra cứu khẩu phần đã cân bằng dữ liệu thành phần thực phẩm USDA.</p>
+                    <p class="subtitle">Tra cứu khẩu phần đã cân bằng dữ liệu thành phần thực phẩm USDA FoodData Central.</p>
                 </div>
                 <div class="section-card grid-2-columns">
                     <div class="upload-zone">
@@ -25,11 +25,12 @@
                         <p id="vision-confidence" class="vision-confidence" role="status" hidden></p>
                         <button type="button" class="btn btn-secondary" id="confirm-food-candidate-btn" style="display:none; margin-top:8px; width:100%;">Xác nhận gợi ý này</button>
                         <label for="food-search-query" style="display:block; margin-top:16px; font-weight:600;">Tên món ăn</label>
-                        <input id="food-search-query" type="search" placeholder="Ví dụ: ức gà nấu chín" maxlength="100" style="width:100%; margin-top:6px;">
+                        <input id="food-search-query" type="search" inputmode="search" placeholder="Ví dụ: fried chicken" maxlength="100" style="width:100%; margin-top:6px;">
                         <label for="food-serving-grams" style="display:block; margin-top:12px; font-weight:600;">Khẩu phần đã cân (gram)</label>
                         <input id="food-serving-grams" type="number" min="1" max="2000" value="100" style="width:100%; margin-top:6px;">
                         <button type="button" class="btn btn-primary" id="recognize-food-btn" style="margin-top: 12px; width:100%;">Tra cứu dữ liệu USDA</button>
                         <p id="food-search-status" class="subtitle" role="status" style="margin-top:10px;"></p>
+                        <p class="subtitle" style="margin-top:10px;">USDA cung cấp dữ liệu tham khảo cho thực phẩm phổ biến và thực phẩm đóng gói. Hãy chọn đúng bản ghi, cân khẩu phần và đối chiếu nhãn khi có.</p>
                         <p class="subtitle" style="margin-top:10px;">Ảnh chỉ được gửi tới Google Gemini khi bạn nhấn “Phân tích ảnh bằng AI”. AI chỉ gợi ý món nhìn thấy; không thể đo khối lượng, dầu, nước sốt hoặc nguyên liệu bị che khuất.</p>
                     </div>
                     <div class="food-analysis" id="analysis-result" style="display:none; text-align:center; flex-direction:column; justify-content:center;">

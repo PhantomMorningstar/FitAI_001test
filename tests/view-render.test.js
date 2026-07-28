@@ -52,6 +52,14 @@ test('error page uses the shared head without loading application SDKs', async (
   assert.doesNotMatch(html, /firebase-app-compat\.js|font-awesome/);
 });
 
+test('overview renders the profile-based meal suggestion region', async () => {
+  const html = await render('index.ejs');
+  assert.match(html, /id="meal-suggestions-title"/);
+  assert.match(html, /id="meal-suggestions-list"[^>]*aria-live="polite"/);
+  assert.match(html, /id="meal-suggestions-status"[^>]*role="status"/);
+  assert.match(html, /mục tiêu calorie, protein, mức vận động và dị ứng/);
+});
+
 test('rendered pages declare Vietnamese and contain no mojibake markers', async () => {
   const suspicious = /Ã|Â|â€|ðŸ|Ä‘|Æ°|áº|á»/;
   for (const [fileName] of applicationPages) {

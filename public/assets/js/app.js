@@ -347,6 +347,59 @@ function updateMacroTargetsUI(macros) {
     updateCalorieUI();
 }
 
+function renderMealSuggestions(suggestions) {
+    const list = document.getElementById('meal-suggestions-list');
+    const target = document.getElementById('meal-suggestions-target');
+    const guidance = document.getElementById('meal-suggestions-guidance');
+    const disclaimer = document.getElementById('meal-suggestions-disclaimer');
+    if (!list || !target || !guidance || !disclaimer) return;
+
+    list.replaceChildren();
+    if (!suggestions?.available) {
+        target.textContent = 'Chưa có gợi ý';
+        guidance.textContent = suggestions?.reason
+            || 'Hoàn thành bảng câu hỏi và kiểm tra an toàn để xem gợi ý món ăn.';
+        disclaimer.hidden = true;
+        return;
+    }
+
+    target.textContent = `${suggestions.basedOn.targetCalories} kcal/ngày · ${suggestions.basedOn.protein} g protein`;
+    guidance.textContent = suggestions.guidance;
+    suggestions.meals.forEach((meal) => {
+        const card = document.createElement('article');
+        card.className = 'meal-suggestion-item';
+        const heading = document.createElement('h3');
+        heading.textContent = meal.label;
+        const targetLine = document.createElement('p');
+        targetLine.className = 'meal-suggestion-numbers';
+        targetLine.textContent = `${meal.calorieRange.minimum}–${meal.calorieRange.maximum} kcal · khoảng ${meal.proteinTarget} g protein`;
+        const options = document.createElement('ul');
+        meal.options.forEach((option) => {
+            const item = document.createElement('li');
+            item.textContent = option;
+            options.appendChild(item);
+        });
+        card.append(heading, targetLine, options);
+        list.appendChild(card);
+    });
+    disclaimer.textContent = suggestions.disclaimer;
+    disclaimer.hidden = false;
+}
+
+function revealMealSuggestions() {
+    const section = document.getElementById('meal-suggestions-section');
+    const status = document.getElementById('meal-suggestions-status');
+    if (!section) return;
+    if (status) {
+        status.textContent = 'Đã cập nhật gợi ý món ăn theo thông tin mới của bạn.';
+        status.hidden = false;
+    }
+    window.requestAnimationFrame(() => {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        section.focus({ preventScroll: true });
+    });
+}
+
 function setOnboardingCompleted(value) {
     localStorage.setItem('fitai_onboarding_completed', value ? 'true' : 'false');
 }
@@ -1252,24 +1305,31 @@ function updateProfileUI(data) {
     updateEnergyMetricsUI(data.metrics);
     updateWeightPlanUI(data.plan);
     updateMacroTargetsUI(data.macros);
+    renderMealSuggestions(data.mealSuggestions);
     populateReminderSettings(data.reminders);
     if (latestWeightEntries.length) renderWeightHistory(latestWeightEntries);
     if (latestActivityEntries.length) renderActivityHistory(latestActivityEntries);
 
-    if (!data.macros && data.dob && !isRefreshingProfileCalculations) {
+    if ((!data.macros || !data.mealSuggestions) && data.dob && !isRefreshingProfileCalculations) {
         isRefreshingProfileCalculations = true;
         requestProfileValidation(data)
             .then(async (result) => {
                 if (!result.valid || !result.macros) return;
                 globalProfileData = {
+                    ...globalProfileData,
                     ...result.data,
                     metrics: result.metrics,
                     plan: result.plan,
                     macros: result.macros,
+                    mealSuggestions: result.mealSuggestions,
                     safety: result.safety
                 };
                 updateMacroTargetsUI(result.macros);
-                await saveProfileToFirebase(globalProfileData);
+                renderMealSuggestions(result.mealSuggestions);
+                saveOnboardingDraft(globalProfileData);
+                if (auth.currentUser && !auth.currentUser.isAnonymous) {
+                    await saveProfileToFirebase(globalProfileData);
+                }
             })
             .catch(() => {})
             .finally(() => { isRefreshingProfileCalculations = false; });
@@ -1574,6 +1634,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (editQuestionsBtn) {
         editQuestionsBtn.addEventListener('click', () => {
             setOnboardingCompleted(false);
+            resetOnboardingFlow();
             showOnboardingScreen();
         });
     }
@@ -2497,6 +2558,17 @@ document.addEventListener("DOMContentLoaded", () => {
         currentStep = step;
     }
 
+    function resetOnboardingFlow() {
+        document.querySelectorAll('.quiz-step').forEach((stepElement, index) => {
+            stepElement.classList.toggle('active', index === 0);
+        });
+        currentStep = 1;
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.innerText = 'Tiếp theo';
+        clearValidationErrors();
+        setQuizProgress();
+    }
+
     if (nextBtn && prevBtn) {
         nextBtn.addEventListener('click', async () => {
             if (currentStep < totalSteps) {
@@ -2523,6 +2595,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateEnergyMetricsUI(previewResult.metrics);
                     updateWeightPlanUI(previewResult.plan);
                     updateMacroTargetsUI(previewResult.macros);
+                    renderMealSuggestions(previewResult.mealSuggestions);
                     const weightGoalEl = document.getElementById('weight-goal');
                     const repGoalEl = document.getElementById('rep-goal');
                     const goal = weightGoalEl ? weightGoalEl.value : 'maintain';
@@ -2592,11 +2665,13 @@ document.addEventListener("DOMContentLoaded", () => {
             metrics: validationResult.metrics,
             plan: validationResult.plan,
             macros: validationResult.macros,
+            mealSuggestions: validationResult.mealSuggestions,
             safety: validationResult.safety
         };
         updateEnergyMetricsUI(validationResult.metrics);
         updateWeightPlanUI(validationResult.plan);
         updateMacroTargetsUI(validationResult.macros);
+        renderMealSuggestions(validationResult.mealSuggestions);
 
         const dashCurrentW = document.getElementById('dash-current-w');
         const dashGoalCal = document.getElementById('dash-goal-cal');
@@ -2625,6 +2700,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateOnboardingStats();
         showMainAppScreen();
         updateCalorieUI();
+        revealMealSuggestions();
     }
     }
 });

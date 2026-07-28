@@ -222,6 +222,86 @@ a { color: inherit; }
     box-shadow: var(--shadow-sm);
 }
 .section-card h3, .macro-main-card h4 { color: var(--text-main); letter-spacing: -0.25px; }
+
+.meal-suggestions-card {
+    margin-top: 22px;
+    scroll-margin-top: 24px;
+}
+
+.meal-suggestions-card:focus {
+    outline: 3px solid rgba(22, 163, 116, 0.28);
+    outline-offset: 3px;
+}
+
+.meal-suggestions-status {
+    margin: 14px 0;
+    padding: 11px 14px;
+    border-radius: 12px;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+.meal-suggestions-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.meal-suggestions-heading h2 {
+    margin: 3px 0 5px;
+}
+
+.meal-suggestions-target {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.meal-suggestions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0 12px;
+}
+
+.meal-suggestion-item {
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    background: #f8fbf9;
+}
+
+.meal-suggestion-item h3 {
+    margin-bottom: 6px;
+}
+
+.meal-suggestion-numbers {
+    color: var(--primary-dark);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.meal-suggestion-item ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.meal-suggestion-item li + li {
+    margin-top: 7px;
+}
+
+@media (max-width: 760px) {
+    .meal-suggestions-grid {
+        grid-template-columns: 1fr;
+    }
+}
 .auth-overview-card { margin-bottom: 0 !important; }
 .daily-focus-card { border-color: #b9ddcc; background: linear-gradient(145deg, #fff, #f1fbf6); }
 .daily-focus-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }

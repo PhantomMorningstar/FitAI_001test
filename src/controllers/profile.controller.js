@@ -3,6 +3,7 @@ const { calculateEnergyMetrics } = require('../services/energy.service');
 const { calculateWeightPlan } = require('../services/weight-plan.service');
 const { calculateMacroTargets } = require('../services/macro.service');
 const { evaluatePlanSafety } = require('../services/safety.service');
+const { generateMealSuggestions } = require('../services/meal-suggestion.service');
 
 const validate = (req, res) => {
   const result = validateProfile(req.body);
@@ -12,12 +13,14 @@ const validate = (req, res) => {
   const plan = calculateWeightPlan(result.data, metrics);
   const macros = calculateMacroTargets(result.data, plan);
   const safety = evaluatePlanSafety(result.data, metrics, plan);
+  const mealSuggestions = generateMealSuggestions(result.data, plan, macros, safety);
   const healthContextBlocked = safety.blockers.some(({ code }) => code.startsWith('HEALTH_CONTEXT_'));
   return res.status(safety.allowed ? 200 : 422).json({
     ...result,
     metrics,
     plan: healthContextBlocked ? null : plan,
     macros: healthContextBlocked ? null : macros,
+    mealSuggestions,
     safety
   });
 };

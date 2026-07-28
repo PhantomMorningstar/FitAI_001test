@@ -72,3 +72,13 @@ test('weight history and plan calibration do not leave Vietnamese units in Engli
     assert.equal(translateText(vietnamese, 'en'), english);
   });
 });
+
+test('profile-based meal suggestions translate their labels and dynamic targets', () => {
+  assert.equal(translateText('Món ăn phù hợp với mục tiêu của bạn', 'en'), 'Foods that fit your goal');
+  assert.equal(translateText('Bữa sáng', 'en'), 'Breakfast');
+  assert.equal(translateText('1650 kcal/ngày · 102 g protein', 'en'), '1650 kcal/day · 102 g protein');
+  assert.equal(
+    translateText('370–450 kcal · khoảng 26 g protein', 'en'),
+    '370–450 kcal · about 26 g protein'
+  );
+});

@@ -36,6 +36,9 @@ test('API returns normalized profile, metrics, plan, macros, and safety result',
   assert.equal(body.macros.carbs, 207);
   assert.equal(body.macros.fat, 46);
   assert.equal(body.macros.fiber, 23);
+  assert.equal(body.mealSuggestions.available, true);
+  assert.equal(body.mealSuggestions.meals.length, 3);
+  assert.equal(body.mealSuggestions.basedOn.targetCalories, 1650);
   assert.equal(body.safety.allowed, true);
   assert.equal(body.safety.status, 'ok');
 });

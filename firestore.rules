@@ -28,29 +28,311 @@ service cloud.firestore {
     }
 
     match /profiles/{userId} {
+      function validHealthContext(data) {
+        return !data.keys().hasAny(['healthContext'])
+          || (data.healthContext is map
+            && data.healthContext.keys().hasOnly([
+              'pregnant',
+              'breastfeeding',
+              'eatingDisorderHistory',
+              'clinicianSupervised'
+            ])
+            && (!data.healthContext.keys().hasAny(['pregnant'])
+              || data.healthContext.pregnant is bool)
+            && (!data.healthContext.keys().hasAny(['breastfeeding'])
+              || data.healthContext.breastfeeding is bool)
+            && (!data.healthContext.keys().hasAny(['eatingDisorderHistory'])
+              || data.healthContext.eatingDisorderHistory is bool)
+            && (!data.healthContext.keys().hasAny(['clinicianSupervised'])
+              || data.healthContext.clinicianSupervised is bool));
+      }
+
+      function validReminderItem(item) {
+        return item is map
+          && item.keys().hasOnly(['enabled', 'time'])
+          && item.keys().hasAll(['enabled', 'time'])
+          && item.enabled is bool
+          && item.time is string
+          && item.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+      }
+
+      function validReminders(data) {
+        return !data.keys().hasAny(['reminders'])
+          || (data.reminders is map
+            && data.reminders.keys().hasOnly(['enabled', 'items'])
+            && data.reminders.keys().hasAll(['enabled', 'items'])
+            && data.reminders.enabled is bool
+            && data.reminders.items is map
+            && data.reminders.items.keys().hasOnly([
+              'meal',
+              'weight',
+              'activity',
+              'wellness'
+            ])
+            && data.reminders.items.keys().hasAll([
+              'meal',
+              'weight',
+              'activity',
+              'wellness'
+            ])
+            && validReminderItem(data.reminders.items.meal)
+            && validReminderItem(data.reminders.items.weight)
+            && validReminderItem(data.reminders.items.activity)
+            && validReminderItem(data.reminders.items.wellness));
+      }
+
+      function validDerivedProfileData(data) {
+        return (!data.keys().hasAny(['metrics'])
+            || (data.metrics is map
+              && data.metrics.bmi is number
+              && data.metrics.bmi >= 10
+              && data.metrics.bmi <= 80
+              && data.metrics.bmr is number
+              && data.metrics.bmr >= 500
+              && data.metrics.bmr <= 5000
+              && data.metrics.tdee is number
+              && data.metrics.tdee >= 500
+              && data.metrics.tdee <= 7000))
+          && (!data.keys().hasAny(['plan'])
+            || (data.plan is map
+              && data.plan.targetCalories is number
+              && data.plan.targetCalories >= 1000
+              && data.plan.targetCalories <= 6000
+              && data.plan.maintenanceCalories is number
+              && data.plan.maintenanceCalories >= 500
+              && data.plan.maintenanceCalories <= 7000))
+          && (!data.keys().hasAny(['macros'])
+            || (data.macros is map
+              && data.macros.targetCalories is number
+              && data.macros.targetCalories >= 1000
+              && data.macros.targetCalories <= 6000
+              && data.macros.protein is number
+              && data.macros.protein >= 0
+              && data.macros.protein <= 500
+              && data.macros.carbs is number
+              && data.macros.carbs >= 0
+              && data.macros.carbs <= 1000
+              && data.macros.fat is number
+              && data.macros.fat >= 0
+              && data.macros.fat <= 500
+              && data.macros.fiber is number
+              && data.macros.fiber >= 0
+              && data.macros.fiber <= 150))
+          && (!data.keys().hasAny(['mealSuggestions'])
+            || data.mealSuggestions is map)
+          && (!data.keys().hasAny(['safety'])
+            || (data.safety is map && data.safety.allowed is bool));
+      }
+
+      function validProfileDocument(data, userId) {
+        return data.keys().hasOnly([
+            'ownerId',
+            'accountType',
+            'updatedAt',
+            'gender',
+            'dob',
+            'age',
+            'height',
+            'weight',
+            'activity',
+            'goal',
+            'targetWeight',
+            'allergies',
+            'healthContext',
+            'metrics',
+            'plan',
+            'macros',
+            'mealSuggestions',
+            'safety',
+            'reminders'
+          ])
+          && data.keys().hasAll([
+            'ownerId',
+            'accountType',
+            'updatedAt',
+            'gender',
+            'dob',
+            'age',
+            'height',
+            'weight',
+            'activity',
+            'goal',
+            'targetWeight',
+            'allergies'
+          ])
+          && data.ownerId == request.auth.uid
+          && userId == request.auth.uid
+          && (data.accountType == 'registered' || data.accountType == 'anonymous')
+          && data.updatedAt is timestamp
+          && (data.gender == 'Male' || data.gender == 'Female')
+          && data.dob is string
+          && data.dob.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && data.age is int
+          && data.age >= 18
+          && data.age <= 100
+          && data.height is number
+          && data.height >= 120
+          && data.height <= 230
+          && data.weight is number
+          && data.weight >= 35
+          && data.weight <= 300
+          && (data.activity == 'sedentary'
+            || data.activity == 'lightly'
+            || data.activity == 'moderately')
+          && (data.goal == 'lose'
+            || data.goal == 'maintain'
+            || data.goal == 'gain')
+          && data.targetWeight is number
+          && data.targetWeight >= 35
+          && data.targetWeight <= 300
+          && ((data.goal == 'lose' && data.targetWeight < data.weight)
+            || (data.goal == 'gain' && data.targetWeight > data.weight)
+            || (data.goal == 'maintain'
+              && data.targetWeight >= data.weight - 2
+              && data.targetWeight <= data.weight + 2))
+          && data.allergies is list
+          && data.allergies.size() <= 6
+          && data.allergies.hasOnly([
+            'seafood',
+            'peanuts',
+            'milk',
+            'eggs',
+            'gluten',
+            'soy'
+          ])
+          && validHealthContext(data)
+          && validReminders(data)
+          && validDerivedProfileData(data);
+      }
+
       allow read, delete: if isSignedIn() && request.auth.uid == userId;
 
       allow create: if isSignedIn()
         && request.auth.uid == userId
-        && request.resource.data.ownerId == request.auth.uid;
+        && validProfileDocument(request.resource.data, userId);
 
       allow update: if isSignedIn()
         && request.auth.uid == userId
         && request.resource.data.ownerId == request.auth.uid
         && ((!resource.data.keys().hasAny(['ownerId']))
-          || resource.data.ownerId == request.auth.uid);
+          || resource.data.ownerId == request.auth.uid)
+        && validProfileDocument(request.resource.data, userId);
     }
 
     match /foodDiaries/{entryId} {
+      function validNutrient(value, maximum) {
+        return value is number
+          && value >= 0
+          && value <= maximum;
+      }
+
+      function validFoodDiaryEntry() {
+        let data = request.resource.data;
+        return data.keys().hasOnly([
+            'ownerId',
+            'foodName',
+            'calories',
+            'protein',
+            'carbs',
+            'fat',
+            'fiber',
+            'servingGrams',
+            'nutritionSource',
+            'fdcId',
+            'dataType',
+            'brandName',
+            'gtinUpc',
+            'timestamp',
+            'updatedAt'
+          ])
+          && data.keys().hasAll([
+            'ownerId',
+            'foodName',
+            'calories',
+            'protein',
+            'carbs',
+            'fat',
+            'fiber',
+            'servingGrams',
+            'nutritionSource',
+            'timestamp'
+          ])
+          && data.ownerId == request.auth.uid
+          && data.foodName is string
+          && data.foodName.size() >= 2
+          && data.foodName.size() <= 120
+          && validNutrient(data.calories, 20000)
+          && validNutrient(data.protein, 2000)
+          && validNutrient(data.carbs, 2000)
+          && validNutrient(data.fat, 2000)
+          && validNutrient(data.fiber, 1000)
+          && data.servingGrams is number
+          && data.servingGrams >= 1
+          && data.servingGrams <= 2000
+          && data.nutritionSource is string
+          && data.nutritionSource.size() >= 2
+          && data.nutritionSource.size() <= 100
+          && (!data.keys().hasAny(['fdcId'])
+            || data.fdcId == null
+            || (data.fdcId is int && data.fdcId > 0))
+          && (!data.keys().hasAny(['dataType'])
+            || (data.dataType is string && data.dataType.size() <= 80))
+          && (!data.keys().hasAny(['brandName'])
+            || data.brandName == null
+            || (data.brandName is string && data.brandName.size() <= 160))
+          && (!data.keys().hasAny(['gtinUpc'])
+            || data.gtinUpc == null
+            || (data.gtinUpc is string && data.gtinUpc.size() <= 32))
+          && data.timestamp is timestamp
+          && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp);
+      }
+
       allow create: if isSignedIn()
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.timestamp is timestamp;
+        && validFoodDiaryEntry();
 
       allow read, delete: if ownsExistingDocument()
         || ownsLegacyDiaryDocument();
 
-      allow update: if isOwner(request.resource.data.ownerId)
-        && (ownsExistingDocument() || ownsLegacyDiaryDocument());
+      allow update: if isSignedIn()
+        && validFoodDiaryEntry()
+        && ((ownsExistingDocument()
+            && request.resource.data.ownerId == resource.data.ownerId)
+          || ownsLegacyDiaryDocument());
+    }
+
+    match /diaryDayStatuses/{entryId} {
+      function validDiaryDayStatus() {
+        return request.resource.data.keys().hasOnly([
+            'ownerId',
+            'dateKey',
+            'completed',
+            'completedAt',
+            'updatedAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'ownerId',
+            'dateKey',
+            'completed',
+            'completedAt',
+            'updatedAt'
+          ])
+          && request.resource.data.ownerId == request.auth.uid
+          && entryId == request.auth.uid + "_" + request.resource.data.dateKey
+          && request.resource.data.dateKey is string
+          && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && request.resource.data.completed == true
+          && request.resource.data.completedAt is timestamp
+          && request.resource.data.updatedAt is timestamp;
+      }
+
+      allow create: if isSignedIn() && validDiaryDayStatus();
+      allow get: if isOwnDatedEntryId(entryId);
+      allow list: if ownsExistingDocument();
+      allow delete: if ownsExistingDocument();
+      allow update: if ownsExistingDocument()
+        && validDiaryDayStatus()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.dateKey == resource.data.dateKey;
     }
 
     match /weightEntries/{entryId} {

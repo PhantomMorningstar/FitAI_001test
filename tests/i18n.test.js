@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { normalizeLanguage, STORAGE_KEY, translateText, VI_TO_EN } = require('../public/assets/js/i18n');
+const { MEAL_CATALOG } = require('../src/services/meal-suggestion.service');
 
 test('language preference accepts English and defaults everything else to Vietnamese', () => {
   assert.equal(normalizeLanguage('en'), 'en');
@@ -74,11 +75,66 @@ test('weight history and plan calibration do not leave Vietnamese units in Engli
 });
 
 test('profile-based meal suggestions translate their labels and dynamic targets', () => {
-  assert.equal(translateText('Món ăn phù hợp với mục tiêu của bạn', 'en'), 'Foods that fit your goal');
+  assert.equal(translateText('Ý tưởng món ăn theo mục tiêu của bạn', 'en'), 'Meal ideas for your goal');
   assert.equal(translateText('Bữa sáng', 'en'), 'Breakfast');
   assert.equal(translateText('1650 kcal/ngày · 102 g protein', 'en'), '1650 kcal/day · 102 g protein');
   assert.equal(
     translateText('370–450 kcal · khoảng 26 g protein', 'en'),
     '370–450 kcal · about 26 g protein'
+  );
+  assert.equal(
+    translateText('Ngân sách bữa: 25% · khoảng 410 kcal · 26 g protein', 'en'),
+    'Meal budget: 25% · about 410 kcal · 26 g protein'
+  );
+  assert.match(
+    translateText('Ý tưởng món — chưa tính khẩu phần và dinh dưỡng chính xác. Hãy cân và tra cứu USDA.', 'en'),
+    /portion size and nutrition have not been calculated/
+  );
+});
+
+test('every meal suggestion, including snacks, has an English translation', () => {
+  Object.values(MEAL_CATALOG).flat().forEach(({ name }) => {
+    assert.notEqual(translateText(name, 'en'), name, `Missing English translation for: ${name}`);
+  });
+  assert.equal(translateText('Bữa phụ', 'en'), 'Snack');
+});
+
+test('allergy limitations are explicit in both languages', () => {
+  const warning = 'FitAI chỉ lọc theo tag của món mẫu; không thể kiểm tra nước sốt, công thức thực tế hoặc nhiễm chéo khi chế biến. Luôn đọc nhãn, kiểm tra đầy đủ thành phần và hỏi người chế biến trước khi ăn.';
+  const english = translateText(warning, 'en');
+  assert.match(english, /sauces/);
+  assert.match(english, /cross-contact/);
+  assert.match(english, /read the label/);
+});
+
+test('activity TDEE is described as a reference that does not change the plan', () => {
+  assert.equal(
+    translateText('TDEE tham khảo từ vận động', 'en'),
+    'Activity-based reference TDEE'
+  );
+  const note = translateText(
+    'TDEE tham khảo từ vận động chỉ dùng để đối chiếu với hồ sơ. FitAI không tự động thay đổi mục tiêu calorie hoặc kế hoạch của bạn theo con số này.',
+    'en'
+  );
+  assert.match(note, /comparison/);
+  assert.match(note, /does not automatically change/);
+});
+
+test('missing USDA nutrients are explained without translating them as zero', () => {
+  assert.equal(translateText('Không có dữ liệu', 'en'), 'No data');
+  assert.equal(
+    translateText('Không thể lưu bản ghi này vì USDA thiếu: năng lượng, chất xơ. Hãy chọn bản ghi khác có đủ dữ liệu.', 'en'),
+    'This record cannot be saved because USDA is missing: calories, fiber. Choose another record with complete data.'
+  );
+});
+
+test('Firebase-protected AI errors are available in both languages', () => {
+  assert.equal(
+    translateText('Hãy đăng nhập để sử dụng tính năng AI.', 'en'),
+    'Sign in to use AI features.'
+  );
+  assert.equal(
+    translateText('Your sign-in session is invalid or expired. Sign in again.', 'vi'),
+    'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Hãy đăng nhập lại.'
   );
 });

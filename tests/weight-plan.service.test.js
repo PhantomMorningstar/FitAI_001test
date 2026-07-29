@@ -21,7 +21,12 @@ test('uses a moderate personalized deficit for an overweight profile', () => {
     estimatedWeeks: 30,
     estimatedDays: 210,
     model: 'TDEE percentage adjustment',
-    assumptions: { kcalPerKg: 7700, activityRemainsStable: true, estimateIsLinear: true }
+    assumptions: {
+      kcalPerKg: 7700,
+      activityRemainsStable: true,
+      estimateIsLinear: true,
+      projectionIsEstimateNotPromise: true
+    }
   });
 });
 

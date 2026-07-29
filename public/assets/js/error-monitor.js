@@ -11,6 +11,23 @@
         }
     }
 
+    function rejectionLocation(reason) {
+        const stack = typeof reason?.stack === 'string' ? reason.stack : '';
+        const match = stack.match(/(https?:\/\/[^\s)]+):(\d+):(\d+)/);
+        if (!match) {
+            return {
+                source: sourcePath(windowObject.location.href),
+                line: null,
+                column: null
+            };
+        }
+        return {
+            source: sourcePath(match[1]),
+            line: Number(match[2]) || null,
+            column: Number(match[3]) || null
+        };
+    }
+
     function send(report) {
         const fingerprint = JSON.stringify(report);
         if (sent.has(fingerprint)) return;
@@ -40,11 +57,12 @@
     });
 
     windowObject.addEventListener('unhandledrejection', (event) => {
+        const location = rejectionLocation(event.reason);
         send({
             errorType: event.reason?.name || 'UnhandledPromiseRejection',
-            source: sourcePath(windowObject.location.href),
-            line: null,
-            column: null
+            source: location.source,
+            line: location.line,
+            column: location.column
         });
     });
 }(window));

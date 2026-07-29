@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'fitai-shell-v25';
+const CACHE_VERSION = 'fitai-shell-v44';
 const APP_SHELL = [
   '/',
   '/roadmap',
@@ -9,7 +9,7 @@ const APP_SHELL = [
   '/manifest.webmanifest',
   '/assets/css/main.css',
   '/assets/icons/fitai-icon.svg',
-  '/assets/js/i18n.js',
+  '/assets/js/i18n.js?v=44',
   '/assets/js/date-utils.js',
   '/assets/js/daily-focus-utils.js',
   '/assets/js/pwa.js',
@@ -22,7 +22,7 @@ const APP_SHELL = [
   '/assets/js/roadmap-utils.js',
   '/assets/js/plan-calibration-utils.js',
   '/assets/js/food-entry-utils.js',
-  '/assets/js/app.js'
+  '/assets/js/app.js?v=42'
 ];
 
 self.addEventListener('install', (event) => {
@@ -72,18 +72,15 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
 

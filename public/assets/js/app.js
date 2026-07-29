@@ -26,6 +26,14 @@ async function ensureAuthenticatedUser() {
     return user;
 }
 
+async function firebaseAuthenticatedFetch(url, options = {}) {
+    const user = await ensureAuthenticatedUser();
+    const token = await user.getIdToken();
+    const headers = new Headers(options.headers || {});
+    headers.set('Authorization', `Bearer ${token}`);
+    return fetch(url, { ...options, headers });
+}
+
 async function createOrUpgradeAccount(email, password) {
     const credential = firebase.auth.EmailAuthProvider.credential(email, password);
     const currentUser = auth.currentUser;
@@ -80,6 +88,84 @@ let latestWeightEntries = [];
 let latestActivityEntries = [];
 let latestWellnessEntries = [];
 let isCheckingReminders = false;
+let activeAuthScope = null;
+let currentDiaryItemCount = 0;
+
+const LOCAL_STATE_KEYS = Object.freeze({
+    onboardingCompleted: 'fitai_onboarding_completed',
+    onboardingDraft: 'fitai_onboarding_draft'
+});
+
+function getAuthScope(user = auth.currentUser) {
+    return user && !user.isAnonymous ? `user_${user.uid}` : 'guest';
+}
+
+function scopedLocalStorageKey(baseKey, user = auth.currentUser) {
+    return `${baseKey}_${getAuthScope(user)}`;
+}
+
+function resetRuntimeUserState() {
+    goalCalories = 0;
+    consumedCalories = 0;
+    consumedProtein = 0;
+    consumedCarbs = 0;
+    consumedFat = 0;
+    consumedFiber = 0;
+    macroTargets = null;
+    globalProfileData = {};
+    latestFoodAnalysis = null;
+    latestWeightEntries = [];
+    latestActivityEntries = [];
+    latestWellnessEntries = [];
+    currentDiaryItemCount = 0;
+
+    updateCalorieUI();
+    updateDiarySummary();
+    renderMealSuggestions({
+        available: false,
+        reason: 'Đăng nhập hoặc hoàn thành bảng câu hỏi để xem gợi ý món ăn.'
+    });
+
+    const emptyTextById = {
+        'dash-current-w': '--',
+        'dash-bmi': '--',
+        'dash-bmi-category': '',
+        'dash-bmr': '--',
+        'dash-tdee': '--',
+        'dash-goal-cal': '--',
+        'rep-age': '--',
+        'rep-bmi': '--',
+        'rep-bmi-category': '',
+        'rep-bmr': '--',
+        'rep-tdee': '--',
+        'rep-maintenance-cal': '--',
+        'rep-cal': '--',
+        'rep-adjustment-cal': '--',
+        'rep-weekly-change': '--',
+        'rep-duration': '--',
+        'roadmap-goal': '--',
+        'roadmap-current': '--',
+        'roadmap-target': '--',
+        'roadmap-progress': '--',
+        'roadmap-weeks': '--'
+    };
+    Object.entries(emptyTextById).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+
+    const diaryList = document.getElementById('diary-list');
+    if (diaryList) {
+        diaryList.innerHTML = '<li class="food-item" style="color:var(--text-muted)">Đăng nhập để xem nhật ký.</li>';
+    }
+    renderDiaryCompletionState(false, false);
+    const roadmap = document.getElementById('personalized-roadmap');
+    if (roadmap) roadmap.replaceChildren();
+
+    if (typeof FitAIWeightUtils !== 'undefined') renderWeightHistory([]);
+    if (typeof FitAIActivityUtils !== 'undefined') renderActivityHistory([]);
+    if (typeof FitAIWellnessUtils !== 'undefined') renderWellnessHistory([]);
+}
 
 function getCurrentLanguage() {
     return window.FitAII18n?.normalizeLanguage(
@@ -351,6 +437,8 @@ function renderMealSuggestions(suggestions) {
     const list = document.getElementById('meal-suggestions-list');
     const target = document.getElementById('meal-suggestions-target');
     const guidance = document.getElementById('meal-suggestions-guidance');
+    const allocation = document.getElementById('meal-suggestions-allocation');
+    const allergyWarning = document.getElementById('meal-allergy-warning');
     const disclaimer = document.getElementById('meal-suggestions-disclaimer');
     if (!list || !target || !guidance || !disclaimer) return;
 
@@ -359,12 +447,16 @@ function renderMealSuggestions(suggestions) {
         target.textContent = 'Chưa có gợi ý';
         guidance.textContent = suggestions?.reason
             || 'Hoàn thành bảng câu hỏi và kiểm tra an toàn để xem gợi ý món ăn.';
+        if (allocation) allocation.hidden = true;
+        if (allergyWarning) allergyWarning.hidden = true;
         disclaimer.hidden = true;
         return;
     }
 
     target.textContent = `${suggestions.basedOn.targetCalories} kcal/ngày · ${suggestions.basedOn.protein} g protein`;
     guidance.textContent = suggestions.guidance;
+    if (allocation) allocation.hidden = false;
+    if (allergyWarning) allergyWarning.hidden = false;
     suggestions.meals.forEach((meal) => {
         const card = document.createElement('article');
         card.className = 'meal-suggestion-item';
@@ -372,14 +464,17 @@ function renderMealSuggestions(suggestions) {
         heading.textContent = meal.label;
         const targetLine = document.createElement('p');
         targetLine.className = 'meal-suggestion-numbers';
-        targetLine.textContent = `${meal.calorieRange.minimum}–${meal.calorieRange.maximum} kcal · khoảng ${meal.proteinTarget} g protein`;
+        targetLine.textContent = `Ngân sách bữa: ${meal.sharePercent}% · khoảng ${meal.calorieTarget} kcal · ${meal.proteinTarget} g protein`;
         const options = document.createElement('ul');
         meal.options.forEach((option) => {
             const item = document.createElement('li');
             item.textContent = option;
             options.appendChild(item);
         });
-        card.append(heading, targetLine, options);
+        const verificationNote = document.createElement('p');
+        verificationNote.className = 'meal-suggestion-verification';
+        verificationNote.textContent = 'Ý tưởng món — chưa tính khẩu phần và dinh dưỡng chính xác. Hãy cân và tra cứu USDA.';
+        card.append(heading, targetLine, options, verificationNote);
         list.appendChild(card);
     });
     disclaimer.textContent = suggestions.disclaimer;
@@ -400,21 +495,31 @@ function revealMealSuggestions() {
     });
 }
 
-function setOnboardingCompleted(value) {
-    localStorage.setItem('fitai_onboarding_completed', value ? 'true' : 'false');
+function setOnboardingCompleted(value, user = auth.currentUser) {
+    localStorage.setItem(
+        scopedLocalStorageKey(LOCAL_STATE_KEYS.onboardingCompleted, user),
+        value ? 'true' : 'false'
+    );
 }
 
-function hasOnboardingCompleted() {
-    return localStorage.getItem('fitai_onboarding_completed') === 'true';
+function hasOnboardingCompleted(user = auth.currentUser) {
+    return localStorage.getItem(
+        scopedLocalStorageKey(LOCAL_STATE_KEYS.onboardingCompleted, user)
+    ) === 'true';
 }
 
-function saveOnboardingDraft(data) {
+function saveOnboardingDraft(data, user = auth.currentUser) {
     if (!data || typeof data !== 'object') return;
-    localStorage.setItem('fitai_onboarding_draft', JSON.stringify(data));
+    localStorage.setItem(
+        scopedLocalStorageKey(LOCAL_STATE_KEYS.onboardingDraft, user),
+        JSON.stringify(data)
+    );
 }
 
-function loadOnboardingDraft() {
-    const raw = localStorage.getItem('fitai_onboarding_draft');
+function loadOnboardingDraft(user = auth.currentUser) {
+    const raw = localStorage.getItem(
+        scopedLocalStorageKey(LOCAL_STATE_KEYS.onboardingDraft, user)
+    );
     if (!raw) return null;
     try {
         return JSON.parse(raw);
@@ -511,15 +616,6 @@ function showMainAppScreen() {
     if (skipLink) skipLink.setAttribute('href', '#main-content');
 }
 
-function updateOnboardingStats() {
-    const completedEl = document.getElementById('stat-completed');
-    const guestsEl = document.getElementById('stat-guests');
-    const completedCount = Number(localStorage.getItem('fitai_completed_onboarding_users') || '0');
-    const guestCount = Number(localStorage.getItem('fitai_guest_sessions') || '0');
-    if (completedEl) completedEl.textContent = completedCount;
-    if (guestsEl) guestsEl.textContent = guestCount;
-}
-
 function clearAuthForm() {
     const emailEls = [document.getElementById('auth-email'), document.getElementById('overview-auth-email')];
     const passEls = [document.getElementById('auth-password'), document.getElementById('overview-auth-password')];
@@ -548,12 +644,76 @@ async function saveProfileToFirebase(profileData) {
 async function saveFoodToFirebase(foodData) {
     try {
         const user = await ensureAuthenticatedUser();
-        await db.collection("foodDiaries").add({ ownerId: user.uid, ...foodData, timestamp: new Date() });
+        const timestamp = new Date();
+        await db.collection("foodDiaries").add({ ownerId: user.uid, ...foodData, timestamp });
+        await invalidateDiaryDayCompletion(FitAIDateUtils.toDateKey(timestamp), user);
         await loadDiaryFromFirebase();
     } catch (error) {
         console.error('Unable to save food:', error);
         throw error;
     }
+}
+
+function diaryDayStatusRef(user, dateKey) {
+    return db.collection('diaryDayStatuses').doc(`${user.uid}_${dateKey}`);
+}
+
+function isValidDiaryDateKey(dateKey) {
+    try {
+        FitAIDateUtils.parseDateKey(dateKey);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function invalidateDiaryDayCompletion(dateKey, user = auth.currentUser) {
+    if (!user || user.isAnonymous || !isValidDiaryDateKey(dateKey)) return;
+    const statusRef = diaryDayStatusRef(user, dateKey);
+    const snapshot = await statusRef.get();
+    if (snapshot.exists) await statusRef.delete();
+}
+
+function renderDiaryCompletionState(completed, hasEntries) {
+    const button = document.getElementById('complete-diary-day-btn');
+    const status = document.getElementById('diary-completion-status');
+    const verificationLabel = document.getElementById('diary-verification-label');
+    if (button) {
+        button.disabled = completed || !hasEntries || !auth.currentUser || auth.currentUser.isAnonymous;
+        button.textContent = completed ? 'Đã xác nhận ngày này' : 'Xác nhận đã ghi đủ trong ngày';
+    }
+    if (verificationLabel) {
+        verificationLabel.textContent = completed
+            ? 'Người dùng tự xác nhận'
+            : 'Chưa tự xác nhận';
+        verificationLabel.classList.toggle('is-confirmed', completed);
+    }
+    if (status) {
+        status.textContent = completed
+            ? 'Người dùng đã tự xác nhận ngày này được ghi đầy đủ; dữ liệu được dùng để đánh giá kế hoạch.'
+            : hasEntries
+                ? 'Nếu bạn đã ghi đủ mọi món và đồ uống có năng lượng, hãy xác nhận ngày này.'
+                : 'Thêm ít nhất một món trước khi xác nhận.';
+    }
+}
+
+async function completeDiaryDay(dateKey = selectedDiaryDateKey) {
+    const user = await ensureAuthenticatedUser();
+    if (!isValidDiaryDateKey(dateKey) || dateKey > FitAIDateUtils.toDateKey()) {
+        throw new Error('Ngày nhật ký không hợp lệ.');
+    }
+    if (currentDiaryItemCount < 1) {
+        throw new Error('Hãy thêm ít nhất một món trước khi hoàn tất ngày.');
+    }
+    const now = new Date();
+    await diaryDayStatusRef(user, dateKey).set({
+        ownerId: user.uid,
+        dateKey,
+        completed: true,
+        completedAt: now,
+        updatedAt: now
+    });
+    renderDiaryCompletionState(true, true);
 }
 
 async function updateFoodDiaryEntry(entryId, changes) {
@@ -563,7 +723,9 @@ async function updateFoodDiaryEntry(entryId, changes) {
     if (!snapshot.exists || snapshot.data().ownerId !== user.uid) {
         throw new Error('Mục nhật ký này không tồn tại hoặc không thuộc tài khoản của bạn.');
     }
+    const dateKey = FitAIDateUtils.toDateKey(FitAIDateUtils.timestampToDate(snapshot.data().timestamp));
     await entryRef.update({ ...changes, ownerId: user.uid, updatedAt: new Date() });
+    await invalidateDiaryDayCompletion(dateKey, user);
     await loadDiaryFromFirebase(selectedDiaryDateKey);
 }
 
@@ -574,7 +736,9 @@ async function deleteFoodDiaryEntry(entryId) {
     if (!snapshot.exists || snapshot.data().ownerId !== user.uid) {
         throw new Error('Mục nhật ký này không tồn tại hoặc không thuộc tài khoản của bạn.');
     }
+    const dateKey = FitAIDateUtils.toDateKey(FitAIDateUtils.timestampToDate(snapshot.data().timestamp));
     await entryRef.delete();
+    await invalidateDiaryDayCompletion(dateKey, user);
     await loadDiaryFromFirebase(selectedDiaryDateKey);
 }
 
@@ -671,6 +835,7 @@ async function loadDiaryFromFirebase(dateKey = selectedDiaryDateKey) {
         selectedDiaryDateKey = dateKey;
         const { start, end } = FitAIDateUtils.getLocalDayRange(dateKey);
         const user = await ensureAuthenticatedUser();
+        const completionSnapshotPromise = diaryDayStatusRef(user, dateKey).get();
         let ownedSnapshot;
         try {
             ownedSnapshot = await db.collection("foodDiaries")
@@ -715,6 +880,7 @@ async function loadDiaryFromFirebase(dateKey = selectedDiaryDateKey) {
             .map((doc) => ({ id: doc.id, ...doc.data() }))
             .sort((a, b) => (FitAIDateUtils.timestampToDate(b.timestamp)?.getTime() || 0)
                 - (FitAIDateUtils.timestampToDate(a.timestamp)?.getTime() || 0));
+        currentDiaryItemCount = items.length;
         consumedCalories = items.reduce((sum, item) => sum + Number(item.calories || 0), 0);
         consumedProtein = items.reduce((sum, item) => sum + Number(item.protein || 0), 0);
         consumedCarbs = items.reduce((sum, item) => sum + Number(item.carbs || 0), 0);
@@ -722,6 +888,11 @@ async function loadDiaryFromFirebase(dateKey = selectedDiaryDateKey) {
         consumedFiber = items.reduce((sum, item) => sum + Number(item.fiber || 0), 0);
         updateCalorieUI();
         updateDiarySummary();
+        const completionSnapshot = await completionSnapshotPromise;
+        renderDiaryCompletionState(
+            completionSnapshot.exists && completionSnapshot.data().completed === true,
+            items.length > 0
+        );
 
         if (!listEl) return;
         listEl.innerHTML = "";
@@ -912,10 +1083,17 @@ function renderWeightHistory(entries) {
     if (progressBar) progressBar.style.width = `${progress.progressPercent || 0}%`;
     const progressStatus = document.getElementById('weight-progress-status');
     if (progressStatus) {
+        const changeTowardGoalKg = Number.isFinite(progress.changeTowardGoalKg)
+            ? progress.changeTowardGoalKg
+            : null;
         const messages = {
             'no-data': 'Thêm số đo để tính tiến độ mục tiêu.',
-            'toward-goal': `Bạn đã tiến ${progress.changeTowardGoalKg.toFixed(1)} kg về phía mục tiêu.`,
-            'away-from-goal': `Xu hướng mới nhất đang đi lệch mục tiêu ${Math.abs(progress.changeTowardGoalKg).toFixed(1)} kg.`,
+            'toward-goal': changeTowardGoalKg === null
+                ? 'Thêm số đo để tính tiến độ mục tiêu.'
+                : `Bạn đã tiến ${changeTowardGoalKg.toFixed(1)} kg về phía mục tiêu.`,
+            'away-from-goal': changeTowardGoalKg === null
+                ? 'Chưa đủ dữ liệu để đánh giá hướng thay đổi cân nặng.'
+                : `Xu hướng mới nhất đang đi lệch mục tiêu ${Math.abs(changeTowardGoalKg).toFixed(1)} kg.`,
             unchanged: 'Cân nặng đã ghi không thay đổi so với số đo ban đầu.',
             reached: 'Cân nặng đã ghi đã đạt mục tiêu đã chọn.',
             maintaining: 'Cân nặng mới nhất đang nằm trong vùng duy trì.',
@@ -1169,12 +1347,18 @@ function renderPlanCalibration(calibration) {
         if (confidence) confidence.textContent = calibration.status === 'health-review' ? 'Cần chuyên gia' : 'Chưa đủ tin cậy';
         if (calibration.status === 'health-review') {
             message.textContent = 'FitAI không tự hiệu chỉnh kế hoạch khi hồ sơ có giới hạn sức khỏe cần chuyên gia theo dõi.';
+        } else if (calibration.status === 'safety-blocked') {
+            message.textContent = 'Mức calorie đề xuất không vượt qua kiểm tra an toàn.';
         } else if (calibration.status === 'data-quality') {
             message.textContent = 'Dữ liệu hiện tạo ra TDEE quan sát không hợp lý. Hãy kiểm tra lại khẩu phần và số đo trước khi điều chỉnh.';
         } else {
             message.textContent = `Đã có ${req.weightEntries}/${req.requiredWeightEntries} số đo, ${req.diaryDays}/${req.requiredDiaryDays} ngày ghi món ăn và ${req.spanDays}/${req.requiredSpanDays} ngày theo dõi.`;
         }
-        if (recommendation) recommendation.textContent = 'Giữ nguyên mục tiêu hiện tại và tiếp tục thu thập dữ liệu.';
+        if (recommendation) {
+            recommendation.textContent = calibration.status === 'safety-blocked'
+                ? 'Không áp dụng thay đổi. Hãy giữ mục tiêu hiện tại hoặc trao đổi với chuyên gia dinh dưỡng.'
+                : 'Giữ nguyên mục tiêu hiện tại và tiếp tục thu thập dữ liệu.';
+        }
         return;
     }
 
@@ -1188,10 +1372,41 @@ function renderPlanCalibration(calibration) {
     message.textContent = statusMessages[calibration.status] || 'Đã hoàn thành đánh giá dữ liệu thực tế.';
     if (confidence) confidence.textContent = calibration.confidence === 'high' ? 'Tin cậy cao' : 'Tin cậy vừa';
     if (recommendation) {
-        recommendation.textContent = calibration.adjustmentCalories === 0
+        const baseRecommendation = calibration.adjustmentCalories === 0
             ? `Giữ mục tiêu ${calibration.currentTargetCalories} kcal/ngày và đánh giá lại sau 7 ngày.`
             : `Có thể thử ${calibration.suggestedTargetCalories} kcal/ngày (${calibration.adjustmentCalories > 0 ? '+' : ''}${calibration.adjustmentCalories} kcal) trong 7–14 ngày, sau đó đánh giá lại. Đề xuất này chưa được tự động áp dụng.`;
+        const warning = calibration.safety?.warnings?.[0]?.message;
+        recommendation.textContent = warning
+            ? `${baseRecommendation} Lưu ý an toàn: ${warning}`
+            : baseRecommendation;
     }
+}
+
+async function applyCalibrationSafety(calibration) {
+    if (!calibration?.ready || calibration.adjustmentCalories === 0) return calibration;
+    const response = await fetch('/api/profile/calibration-safety', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            profile: globalProfileData,
+            proposedTargetCalories: calibration.suggestedTargetCalories
+        })
+    });
+    const payload = await response.json();
+    if (payload.safety?.allowed) {
+        return { ...calibration, safety: payload.safety };
+    }
+    if (payload.safety) {
+        return {
+            ...calibration,
+            ready: false,
+            status: 'safety-blocked',
+            proposedTargetCalories: calibration.suggestedTargetCalories,
+            suggestedTargetCalories: null,
+            safety: payload.safety
+        };
+    }
+    throw new Error(payload.errors?.proposedTargetCalories || payload.error || 'Không thể kiểm tra an toàn cho đề xuất calorie.');
 }
 
 async function loadPersonalizedRoadmap() {
@@ -1199,17 +1414,25 @@ async function loadPersonalizedRoadmap() {
     const status = document.getElementById('roadmap-status');
     try {
         const user = await ensureAuthenticatedUser();
-        const [weightSnapshot, diarySnapshot] = await Promise.all([
+        const [weightSnapshot, diarySnapshot, completionSnapshot] = await Promise.all([
             db.collection('weightEntries').where('ownerId', '==', user.uid).get(),
-            db.collection('foodDiaries').where('ownerId', '==', user.uid).get()
+            db.collection('foodDiaries').where('ownerId', '==', user.uid).get(),
+            db.collection('diaryDayStatuses').where('ownerId', '==', user.uid).get()
         ]);
+        const completedDateKeys = new Set(completionSnapshot.docs
+            .map((document) => document.data())
+            .filter((statusEntry) => statusEntry.completed === true)
+            .map((statusEntry) => statusEntry.dateKey));
         const weights = weightSnapshot.docs.map((document) => document.data());
         const diaryEntries = diarySnapshot.docs.map((document) => {
             const data = document.data();
             const timestamp = FitAIDateUtils.timestampToDate(data.timestamp);
             return {
                 dateKey: timestamp ? FitAIDateUtils.toDateKey(timestamp) : '',
-                calories: Number(data.calories)
+                calories: Number(data.calories),
+                completed: timestamp
+                    ? completedDateKeys.has(FitAIDateUtils.toDateKey(timestamp))
+                    : false
             };
         });
         const roadmap = FitAIRoadmapUtils.buildPersonalizedRoadmap(
@@ -1220,12 +1443,13 @@ async function loadPersonalizedRoadmap() {
         );
         renderPersonalizedRoadmap(roadmap);
         if (window.FitAIPlanCalibrationUtils) {
-            renderPlanCalibration(FitAIPlanCalibrationUtils.buildPlanCalibration(
+            const calibration = FitAIPlanCalibrationUtils.buildPlanCalibration(
                 globalProfileData,
                 weights,
                 diaryEntries,
                 FitAIWeightUtils
-            ));
+            );
+            renderPlanCalibration(await applyCalibrationSafety(calibration));
         }
     } catch (error) {
         console.error('Unable to build personalized roadmap:', error);
@@ -1501,6 +1725,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const analysisCarbs = getEl('analysis-carbs');
     const analysisFat = getEl('analysis-fat');
     const analysisFiber = getEl('analysis-fiber');
+    const analysisDataQuality = getEl('analysis-data-quality');
     const addFoodBtn = getEl('add-food-btn');
     const foodSearchQuery = getEl('food-search-query');
     const foodServingGrams = getEl('food-serving-grams');
@@ -1526,6 +1751,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (analysisCarbs) analysisCarbs.innerText = '-- g';
         if (analysisFat) analysisFat.innerText = '-- g';
         if (analysisFiber) analysisFiber.innerText = '-- g';
+        if (analysisDataQuality) {
+            analysisDataQuality.hidden = true;
+            analysisDataQuality.textContent = '';
+        }
         if (addFoodBtn) addFoodBtn.disabled = true;
         if (recognizeFoodBtn) recognizeFoodBtn.disabled = false;
         if (analysisResult) analysisResult.style.display = 'none';
@@ -1541,7 +1770,6 @@ document.addEventListener("DOMContentLoaded", () => {
         continueToAppBtn.addEventListener('click', () => {
             updateOnboardingDraft();
             setOnboardingCompleted(true);
-            updateOnboardingStats();
             showMainAppScreen();
         });
     }
@@ -1571,6 +1799,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function setProfileAuthState(user) {
+        const isRegistered = Boolean(user && !user.isAnonymous);
+        const authBox = document.getElementById('auth-container');
+        const profileBox = document.getElementById('authenticated-profile-container');
+        const settingsBtn = document.getElementById('settings-toggle-btn');
+        const profilePage = document.getElementById('profile-page');
+        const profileLogoutBtn = document.getElementById('btn-logout');
+        const verificationStatus = document.getElementById('account-verification-status');
+        const resendVerificationBtn = document.getElementById('resend-verification-btn');
+
+        if (authBox) authBox.style.display = isRegistered ? 'none' : 'block';
+        if (profileBox) profileBox.style.display = isRegistered ? 'flex' : 'none';
+        if (profileLogoutBtn) profileLogoutBtn.disabled = !isRegistered;
+        if (verificationStatus) {
+            verificationStatus.textContent = isRegistered
+                ? (user.emailVerified
+                    ? `Email đã xác minh: ${user.email}`
+                    : `Email chưa xác minh: ${user.email}`)
+                : '';
+        }
+        if (resendVerificationBtn) {
+            resendVerificationBtn.hidden = !isRegistered || user.emailVerified;
+        }
+        if (settingsBtn) {
+            settingsBtn.style.display = isRegistered && profilePage ? 'block' : 'none';
+        }
+    }
+
     if (overviewSigninBtn) {
         overviewSigninBtn.addEventListener('click', async () => {
             if (!overviewEmail || !overviewPassword) return;
@@ -1579,7 +1835,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!validateAuthForm(email, pass, 'overview-reset-status')) return;
             overviewSigninBtn.disabled = true;
             try {
-                await auth.signInWithEmailAndPassword(email, pass);
+                const credential = await auth.signInWithEmailAndPassword(email, pass);
+                setProfileAuthState(credential.user);
+                setOverviewAuthState(credential.user);
                 clearAuthForm();
                 showAuthFeedback('overview-reset-status', 'Đăng nhập thành công.');
             } catch (error) {
@@ -1656,18 +1914,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function showFoodAnalysis(result) {
         latestFoodAnalysis = result;
+        const formatNutrient = (value, unit) => value === null || value === undefined
+            ? 'Không có dữ liệu'
+            : `${value} ${unit}`;
+        const nutrientLabels = {
+            calories: 'năng lượng',
+            protein: 'chất đạm',
+            carbs: 'tinh bột',
+            fat: 'chất béo',
+            fiber: 'chất xơ'
+        };
+        const missingNutrients = Array.isArray(result.missingNutrients)
+            ? result.missingNutrients
+            : [];
         if (analysisFoodName) analysisFoodName.innerText = result.name;
-        if (analysisCalories) analysisCalories.innerText = `${result.calories} kcal`;
-        if (analysisProtein) analysisProtein.innerText = `${result.protein} g`;
-        if (analysisCarbs) analysisCarbs.innerText = `${result.carbs} g`;
-        if (analysisFat) analysisFat.innerText = `${result.fat} g`;
-        if (analysisFiber) analysisFiber.innerText = `${result.fiber} g`;
+        if (analysisCalories) analysisCalories.innerText = formatNutrient(result.calories, 'kcal');
+        if (analysisProtein) analysisProtein.innerText = formatNutrient(result.protein, 'g');
+        if (analysisCarbs) analysisCarbs.innerText = formatNutrient(result.carbs, 'g');
+        if (analysisFat) analysisFat.innerText = formatNutrient(result.fat, 'g');
+        if (analysisFiber) analysisFiber.innerText = formatNutrient(result.fiber, 'g');
         if (analysisSource) {
             analysisSource.textContent = result.fdcId
                 ? `${result.grams} g • ${result.source} • FDC ${result.fdcId}`
                 : `${result.grams} g • ${result.source}`;
         }
-        if (addFoodBtn) addFoodBtn.disabled = false;
+        if (analysisDataQuality) {
+            analysisDataQuality.hidden = missingNutrients.length === 0;
+            analysisDataQuality.textContent = missingNutrients.length
+                ? `Không thể lưu bản ghi này vì USDA thiếu: ${missingNutrients.map((name) => nutrientLabels[name] || name).join(', ')}. Hãy chọn bản ghi khác có đủ dữ liệu.`
+                : '';
+        }
+        if (addFoodBtn) addFoodBtn.disabled = missingNutrients.length > 0;
         if (analysisResult) analysisResult.style.display = 'flex';
     }
 
@@ -1803,7 +2080,7 @@ document.addEventListener("DOMContentLoaded", () => {
             analyzePhotoBtn.disabled = true;
             if (visionStatus) visionStatus.textContent = 'AI đang kiểm tra món ăn trong ảnh...';
             try {
-                const response = await fetch('/api/vision/recognize-food', {
+                const response = await firebaseAuthenticatedFetch('/api/vision/recognize-food', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ imageDataUrl: selectedFoodImageDataUrl })
@@ -1882,6 +2159,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (addFoodBtn) {
         addFoodBtn.addEventListener('click', async () => {
             if (!latestFoodAnalysis) return;
+            if (latestFoodAnalysis.nutritionComplete === false
+                || latestFoodAnalysis.missingNutrients?.length) {
+                if (foodSearchStatus) {
+                    foodSearchStatus.textContent = 'Không thể lưu món có dữ liệu dinh dưỡng bị thiếu. Hãy chọn bản ghi USDA khác.';
+                }
+                return;
+            }
             addFoodBtn.disabled = true;
             try {
                 await saveFoodToFirebase({
@@ -2080,6 +2364,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const diaryDatePicker = getEl('diary-date-picker');
     const diaryDateTitle = getEl('diary-date-title');
     const diaryTodayBtn = getEl('diary-today-btn');
+    const completeDiaryDayBtn = getEl('complete-diary-day-btn');
 
     function setDiaryDate(dateKey, shouldLoad = true) {
         selectedDiaryDateKey = dateKey;
@@ -2111,6 +2396,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (diaryTodayBtn) {
         diaryTodayBtn.addEventListener('click', () => setDiaryDate(FitAIDateUtils.toDateKey()));
+    }
+
+    if (completeDiaryDayBtn) {
+        completeDiaryDayBtn.addEventListener('click', async () => {
+            const actionStatus = getEl('diary-action-status');
+            completeDiaryDayBtn.disabled = true;
+            try {
+                await completeDiaryDay(selectedDiaryDateKey);
+                if (actionStatus) actionStatus.textContent = 'Bạn đã tự xác nhận nhật ký ngày này là đầy đủ.';
+            } catch (error) {
+                if (actionStatus) actionStatus.textContent = error.message;
+                renderDiaryCompletionState(false, currentDiaryItemCount > 0);
+            }
+        });
     }
 
     document.addEventListener('fitai:languagechange', () => {
@@ -2153,20 +2452,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Monitor auth state and read from dedicated 'profiles' database
     auth.onAuthStateChanged(async user => {
-        const authBox = document.getElementById('auth-container');
-        const profileBox = document.getElementById('authenticated-profile-container');
-        const settingsBtn = document.getElementById('settings-toggle-btn');
-        const profilePage = document.getElementById('profile-page');
-        const profileLogoutBtn = document.getElementById('btn-logout');
-        const verificationStatus = document.getElementById('account-verification-status');
-        const resendVerificationBtn = document.getElementById('resend-verification-btn');
+        const authScope = getAuthScope(user);
+        const authScopeChanged = activeAuthScope !== null && activeAuthScope !== authScope;
+        activeAuthScope = authScope;
+        if (authScopeChanged) resetRuntimeUserState();
+
         const onboardingScreen = document.getElementById('onboarding-screen');
         const mainAppScreen = document.getElementById('main-app-screen');
 
         if (!user || user.isAnonymous) {
-            if (authBox) authBox.style.display = 'block';
-            if (profileBox) profileBox.style.display = 'none';
-            if (settingsBtn) settingsBtn.style.display = 'none';
+            setProfileAuthState(null);
             const settingsPanel = document.getElementById('settings-panel');
             if (settingsPanel) settingsPanel.style.display = 'none';
             setOverviewAuthState(null);
@@ -2180,36 +2475,32 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (user) {
             const isRegistered = true;
-            if (isRegistered && profileLogoutBtn) profileLogoutBtn.disabled = false;
-            if (verificationStatus) {
-                verificationStatus.textContent = user.emailVerified
-                    ? `Email đã xác minh: ${user.email}`
-                    : `Email chưa xác minh: ${user.email}`;
-            }
-            if (resendVerificationBtn) resendVerificationBtn.hidden = user.emailVerified;
-            if (authBox) authBox.style.display = isRegistered ? 'none' : 'block';
-            if (profileBox) profileBox.style.display = isRegistered ? 'flex' : 'none';
+            setProfileAuthState(user);
             setOverviewAuthState(isRegistered ? user : null);
-            const onboardingDone = hasOnboardingCompleted();
-            if (!onboardingDone) {
-                showOnboardingScreen();
-            } else {
-                showMainAppScreen();
-            }
-            if (settingsBtn) {
-                settingsBtn.style.display = isRegistered && profilePage ? 'block' : 'none';
-            }
-            // Đọc dữ liệu từ bộ sưu tập "profiles" riêng biệt
-            db.collection("profiles").doc(user.uid).get().then(doc => {
-                if(doc.exists) {
+            // Đọc hồ sơ theo đúng UID và bỏ kết quả nếu tài khoản đã đổi trong lúc chờ.
+            const requestedScope = authScope;
+            try {
+                const doc = await db.collection("profiles").doc(user.uid).get();
+                if (activeAuthScope !== requestedScope) return;
+                if (doc.exists) {
                     globalProfileData = doc.data();
+                    setOnboardingCompleted(true, user);
+                    saveOnboardingDraft(globalProfileData, user);
                     updateProfileUI(globalProfileData);
+                    showMainAppScreen();
                 } else {
-                    updateProfileUI(globalProfileData);
+                    resetRuntimeUserState();
+                    setOnboardingCompleted(false, user);
+                    showOnboardingScreen();
                 }
                 loadPersonalizedRoadmap();
                 checkDueReminders();
-            });
+            } catch (error) {
+                if (activeAuthScope !== requestedScope) return;
+                console.error('Unable to load profile:', error);
+                resetRuntimeUserState();
+                showOnboardingScreen();
+            }
             loadDiaryFromFirebase();
             loadWeightHistory();
             loadActivityHistory();
@@ -2225,7 +2516,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const onboardingDone = hasOnboardingCompleted();
-    updateOnboardingStats();
     if (onboardingDone) {
         showMainAppScreen();
     } else {
@@ -2295,7 +2585,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!validateAuthForm(email, pass, 'profile-reset-status')) return;
             btnLogin.disabled = true;
             try {
-                await auth.signInWithEmailAndPassword(email, pass);
+                const credential = await auth.signInWithEmailAndPassword(email, pass);
+                setProfileAuthState(credential.user);
+                setOverviewAuthState(credential.user);
                 clearAuthForm();
                 showAuthFeedback('profile-reset-status', 'Đăng nhập thành công.');
             } catch (error) {
@@ -2383,7 +2675,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 status.textContent = 'FitAI đang chuẩn bị câu trả lời...';
             }
             try {
-                const response = await fetch('/api/nutrition/chat', {
+                const response = await firebaseAuthenticatedFetch('/api/nutrition/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2689,15 +2981,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateProfileUI(globalProfileData);
         saveOnboardingDraft(globalProfileData);
 
-        const completedCount = Number(localStorage.getItem('fitai_completed_onboarding_users') || '0') + 1;
-        localStorage.setItem('fitai_completed_onboarding_users', String(completedCount));
-        const guestCount = Number(localStorage.getItem('fitai_guest_sessions') || '0');
-        if (guestCount < 0) {
-            localStorage.setItem('fitai_guest_sessions', '0');
-        }
-
         setOnboardingCompleted(true);
-        updateOnboardingStats();
         showMainAppScreen();
         updateCalorieUI();
         revealMealSuggestions();

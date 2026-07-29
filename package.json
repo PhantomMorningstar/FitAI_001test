@@ -5,8 +5,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check src/app.js && node --check src/routes/page.routes.js && node --check src/controllers/nutrition.controller.js && node --check src/controllers/nutrition-chat.controller.js && node --check src/controllers/vision.controller.js && node --check src/middleware/chat-rate-limit.middleware.js && node --check src/middleware/vision-rate-limit.middleware.js && node --check src/middleware/production-security.middleware.js && node --check src/middleware/client-error-monitor.middleware.js && node --check src/validators/profile.validator.js && node --check src/services/energy.service.js && node --check src/services/weight-plan.service.js && node --check src/services/macro.service.js && node --check src/services/meal-suggestion.service.js && node --check src/services/safety.service.js && node --check src/services/nutrition.service.js && node --check src/services/nutrition-chat.service.js && node --check src/services/food-vision.service.js && node --check public/service-worker.js && node --check public/assets/js/error-monitor.js && node --check public/assets/js/pwa.js && node --check public/assets/js/motion.js && node --check public/assets/js/i18n.js && node --check public/assets/js/image-utils.js && node --check public/assets/js/date-utils.js && node --check public/assets/js/activity-utils.js && node --check public/assets/js/wellness-utils.js && node --check public/assets/js/reminder-utils.js && node --check public/assets/js/weight-utils.js && node --check public/assets/js/roadmap-utils.js && node --check public/assets/js/plan-calibration-utils.js && node --check public/assets/js/food-entry-utils.js && node --check public/assets/js/app.js",
+    "check": "node --check server.js && node --check playwright.config.js && node --check e2e/main-flow.spec.js && node --check src/app.js && node --check src/routes/page.routes.js && node --check src/controllers/nutrition.controller.js && node --check src/controllers/nutrition-chat.controller.js && node --check src/controllers/vision.controller.js && node --check src/middleware/firebase-auth.middleware.js && node --check src/middleware/chat-rate-limit.middleware.js && node --check src/middleware/vision-rate-limit.middleware.js && node --check src/middleware/production-security.middleware.js && node --check src/middleware/client-error-monitor.middleware.js && node --check src/validators/profile.validator.js && node --check src/services/energy.service.js && node --check src/services/weight-plan.service.js && node --check src/services/macro.service.js && node --check src/services/meal-suggestion.service.js && node --check src/services/safety.service.js && node --check src/services/nutrition.service.js && node --check src/services/nutrition-chat.service.js && node --check src/services/food-vision.service.js && node --check public/service-worker.js && node --check public/assets/js/error-monitor.js && node --check public/assets/js/pwa.js && node --check public/assets/js/motion.js && node --check public/assets/js/i18n.js && node --check public/assets/js/image-utils.js && node --check public/assets/js/date-utils.js && node --check public/assets/js/daily-focus-utils.js && node --check public/assets/js/activity-utils.js && node --check public/assets/js/wellness-utils.js && node --check public/assets/js/reminder-utils.js && node --check public/assets/js/weight-utils.js && node --check public/assets/js/roadmap-utils.js && node --check public/assets/js/plan-calibration-utils.js && node --check public/assets/js/food-entry-utils.js && node --check public/assets/js/app.js",
     "test": "node --test",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "test:coverage": "node --experimental-test-coverage --test",
     "test:firestore-rules": "firebase emulators:exec --only firestore --project demo-fitai \"node --test tests/firestore.rules.emulator.cjs\"",
     "test:security": "node --test tests/firestore-rules.static.test.js && npm run test:firestore-rules",
@@ -16,10 +18,12 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "ejs": "^3.1.10",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "firebase-admin": "^14.2.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
+    "@playwright/test": "^1.62.0",
     "firebase": "^12.16.0",
     "firebase-tools": "^15.24.0"
   }

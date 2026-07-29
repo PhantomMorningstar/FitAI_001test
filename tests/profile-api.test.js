@@ -23,6 +23,15 @@ const postProfile = (profile) => fetch(`${baseUrl}/api/profile/validate`, {
   body: JSON.stringify(profile)
 });
 
+const postCalibrationTarget = (profile, proposedTargetCalories) => fetch(
+  `${baseUrl}/api/profile/calibration-safety`,
+  {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ profile, proposedTargetCalories })
+  }
+);
+
 test('API returns normalized profile, metrics, plan, macros, and safety result', async () => {
   const response = await postProfile(validProfile());
   const body = await response.json();
@@ -37,8 +46,12 @@ test('API returns normalized profile, metrics, plan, macros, and safety result',
   assert.equal(body.macros.fat, 46);
   assert.equal(body.macros.fiber, 23);
   assert.equal(body.mealSuggestions.available, true);
-  assert.equal(body.mealSuggestions.meals.length, 3);
+  assert.equal(body.mealSuggestions.meals.length, 4);
   assert.equal(body.mealSuggestions.basedOn.targetCalories, 1650);
+  assert.equal(
+    body.mealSuggestions.meals.reduce((total, meal) => total + meal.calorieTarget, 0),
+    body.plan.targetCalories
+  );
   assert.equal(body.safety.allowed, true);
   assert.equal(body.safety.status, 'ok');
 });
@@ -68,4 +81,18 @@ test('API returns warnings without blocking a large but otherwise valid goal', a
   assert.equal(response.status, 200);
   assert.equal(body.safety.status, 'warning');
   assert.ok(body.safety.warnings.some(({ code }) => code === 'LARGE_INITIAL_GOAL'));
+});
+
+test('API runs calibration calorie proposals through the safety engine', async () => {
+  const safeResponse = await postCalibrationTarget(validProfile(), 1550);
+  const safeBody = await safeResponse.json();
+  assert.equal(safeResponse.status, 200);
+  assert.equal(safeBody.safety.allowed, true);
+  assert.equal(safeBody.proposedTargetCalories, 1550);
+
+  const blockedResponse = await postCalibrationTarget(validProfile(), 950);
+  const blockedBody = await blockedResponse.json();
+  assert.equal(blockedResponse.status, 422);
+  assert.equal(blockedBody.safety.allowed, false);
+  assert.ok(blockedBody.safety.blockers.some(({ code }) => code === 'CALORIES_DANGEROUSLY_LOW'));
 });

@@ -11,9 +11,21 @@ test('meal suggestions use calorie and protein targets from the validated plan',
   const result = generateMealSuggestions(validProfile(), plan, macros, safe);
   assert.equal(result.available, true);
   assert.equal(result.basedOn.targetCalories, 1800);
-  assert.equal(result.meals.length, 3);
+  assert.equal(result.meals.length, 4);
   assert.deepEqual(result.meals[0].calorieRange, { minimum: 410, maximum: 500 });
   assert.equal(result.meals[0].proteinTarget, 30);
+  assert.equal(result.meals.at(-1).slot, 'snack');
+  assert.equal(result.meals.at(-1).sharePercent, 10);
+  assert.equal(
+    result.meals.reduce((total, meal) => total + meal.calorieTarget, 0),
+    plan.targetCalories
+  );
+  assert.equal(
+    result.meals.reduce((total, meal) => total + meal.proteinTarget, 0),
+    macros.protein
+  );
+  assert.match(result.disclaimer, /ngân sách cho cả bữa/);
+  assert.match(result.disclaimer, /cân nguyên liệu.*USDA/);
 });
 
 test('meal suggestions exclude every selected allergen', () => {

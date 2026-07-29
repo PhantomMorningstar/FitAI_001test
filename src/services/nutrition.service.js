@@ -29,11 +29,28 @@ function nutrientValue(food, ids) {
   const nutrient = (food.foodNutrients || []).find((item) =>
     ids.includes(Number(item.nutrientId ?? item.nutrient?.id))
   );
-  return Number(nutrient?.value ?? nutrient?.amount ?? 0);
+  if (!nutrient) return null;
+  const rawValue = nutrient.value ?? nutrient.amount;
+  if (rawValue === null || rawValue === undefined || rawValue === '') return null;
+  const value = Number(rawValue);
+  return Number.isFinite(value) ? value : null;
 }
 
 function normalizeFood(food, grams) {
   const factor = grams / 100;
+  const rawNutrients = Object.fromEntries(
+    Object.entries(NUTRIENT_IDS).map(([name, ids]) => [name, nutrientValue(food, ids)])
+  );
+  const scaledNutrients = {
+    calories: rawNutrients.calories === null ? null : Math.round(rawNutrients.calories * factor),
+    protein: rawNutrients.protein === null ? null : round(rawNutrients.protein * factor),
+    carbs: rawNutrients.carbs === null ? null : round(rawNutrients.carbs * factor),
+    fat: rawNutrients.fat === null ? null : round(rawNutrients.fat * factor),
+    fiber: rawNutrients.fiber === null ? null : round(rawNutrients.fiber * factor)
+  };
+  const missingNutrients = Object.entries(scaledNutrients)
+    .filter(([, value]) => value === null)
+    .map(([name]) => name);
   return {
     fdcId: food.fdcId,
     name: food.description,
@@ -41,11 +58,9 @@ function normalizeFood(food, grams) {
     brandName: food.brandName || food.brandOwner || null,
     gtinUpc: food.gtinUpc || null,
     grams,
-    calories: Math.round(nutrientValue(food, NUTRIENT_IDS.calories) * factor),
-    protein: round(nutrientValue(food, NUTRIENT_IDS.protein) * factor),
-    carbs: round(nutrientValue(food, NUTRIENT_IDS.carbs) * factor),
-    fat: round(nutrientValue(food, NUTRIENT_IDS.fat) * factor),
-    fiber: round(nutrientValue(food, NUTRIENT_IDS.fiber) * factor),
+    ...scaledNutrients,
+    missingNutrients,
+    nutritionComplete: missingNutrients.length === 0,
     source: 'USDA FoodData Central'
   };
 }

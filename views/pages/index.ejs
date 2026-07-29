@@ -99,7 +99,7 @@
                         <p><strong>BMI:</strong> <span id="rep-bmi">--</span> <span id="rep-bmi-category"></span></p>
                         <p><strong>BMR:</strong> <span id="rep-bmr">--</span> kcal/ngày</p>
                         <p><strong>TDEE ước tính:</strong> <span id="rep-tdee">--</span> kcal/ngày</p>
-                        <small class="metric-disclaimer">Nhu cầu năng lượng và mức thay đổi cân nặng chỉ là ước tính. Hãy đánh giá kết quả thực tế bằng xu hướng cân nặng theo thời gian.</small>
+                        <small class="metric-disclaimer">Thời gian đạt mục tiêu là ước tính thô, không phải cam kết. Ước tính giả định mức vận động và tốc độ thay đổi cân nặng tương đối ổn định; kết quả thực tế có thể khác.</small>
                     </div>
                 </div>
                 <div class="quiz-navigation">
@@ -109,19 +109,9 @@
             </form>
 
             <div class="user-management-card">
-                <h3>Quản lý người dùng</h3>
-                <p>Màn hình thiết lập ban đầu hướng dẫn người dùng mới hoàn thiện hồ sơ.</p>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <strong id="stat-completed">0</strong>
-                        <span>Đã hoàn thành</span>
-                    </div>
-                    <div class="stat-box">
-                        <strong id="stat-guests">0</strong>
-                        <span>Khách</span>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-primary" id="continue-to-app-btn">Mở trang tổng quan</button>
+                <h3>Khám phá ở chế độ khách</h3>
+                <p>Bạn có thể xem giao diện trước khi đăng nhập. Dữ liệu ở chế độ khách chỉ nằm trên thiết bị này và không được đồng bộ lên Firebase.</p>
+                <button type="button" class="btn btn-primary" id="continue-to-app-btn">Tiếp tục ở chế độ khách</button>
             </div>
         </div>
     </div>
@@ -221,28 +211,31 @@
                     <div class="meal-suggestions-heading">
                         <div>
                             <span class="daily-focus-eyebrow">GỢI Ý THEO HỒ SƠ</span>
-                            <h2 id="meal-suggestions-title">Món ăn phù hợp với mục tiêu của bạn</h2>
+                            <h2 id="meal-suggestions-title">Ý tưởng món ăn theo mục tiêu của bạn</h2>
                         </div>
                         <span id="meal-suggestions-target" class="meal-suggestions-target">Hoàn thành bảng câu hỏi để xem gợi ý</span>
                     </div>
                     <p id="meal-suggestions-guidance" class="subtitle">
                         FitAI dựa trên mục tiêu calorie, protein, mức vận động và dị ứng đã chọn.
                     </p>
+                    <p id="meal-suggestions-allocation" class="subtitle" hidden>
+                        Phân bổ năng lượng tham khảo: sáng 25% + trưa 35% + tối 30% + bữa phụ 10% = 100% mục tiêu ngày.
+                    </p>
+                    <aside id="meal-allergy-warning" class="meal-allergy-warning" aria-label="Cảnh báo an toàn dị ứng" hidden>
+                        <strong><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Cảnh báo dị ứng</strong>
+                        <span>FitAI chỉ lọc theo tag của món mẫu; không thể kiểm tra nước sốt, công thức thực tế hoặc nhiễm chéo khi chế biến. Luôn đọc nhãn, kiểm tra đầy đủ thành phần và hỏi người chế biến trước khi ăn.</span>
+                    </aside>
                     <p id="meal-suggestions-status" class="meal-suggestions-status" role="status" aria-live="polite" hidden></p>
                     <div id="meal-suggestions-list" class="meal-suggestions-grid" aria-live="polite"></div>
                     <p id="meal-suggestions-disclaimer" class="metric-disclaimer">
-                        Gợi ý không thay thế chuyên gia y tế. Hãy cân khẩu phần và xác nhận dữ liệu dinh dưỡng bằng USDA.
+                        Các con số là ngân sách cho cả bữa, không phải dinh dưỡng đã tính của từng món gợi ý. Muốn biết khẩu phần thực tế, hãy cân nguyên liệu và tra cứu đúng thực phẩm trên USDA trước khi lưu.
                     </p>
                 </section>
 
                 <div class="mini-status-grid">
                     <div class="mini-card">
                         <div class="mini-icon"><i class="fa-solid fa-weight-scale"></i></div>
-                        <div class="mini-info"><small>Cân nặng</small><strong id="dash-current-w">68 kg</strong></div>
-                    </div>
-                    <div class="mini-card">
-                        <div class="mini-icon" style="color: #3498db;"><i class="fa-solid fa-droplet"></i></div>
-                        <div class="mini-info"><small>Nước uống</small><strong>1.5 L / 2.5L</strong></div>
+                        <div class="mini-info"><small>Cân nặng</small><strong id="dash-current-w">--</strong></div>
                     </div>
                     <div class="mini-card">
                         <div class="mini-icon" style="color:#8e44ad;"><i class="fa-solid fa-chart-simple"></i></div>

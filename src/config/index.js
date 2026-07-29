@@ -9,6 +9,7 @@ const config = {
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   geminiVisionModel: process.env.GEMINI_VISION_MODEL || 'gemini-3.6-flash',
   geminiChatModel: process.env.GEMINI_CHAT_MODEL || process.env.GEMINI_VISION_MODEL || 'gemini-3.6-flash',
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID || 'fitai-test1-2c5b8',
   rootDir,
   publicDir: path.join(rootDir, 'public'),
   viewsDir: path.join(rootDir, 'views')
@@ -20,6 +21,9 @@ function validateProductionConfig(environment = process.env) {
   const fdcKey = environment.FDC_API_KEY || '';
   if (!fdcKey || fdcKey === 'DEMO_KEY' || fdcKey.startsWith('your_')) {
     errors.push('FDC_API_KEY must use a private production FoodData Central key.');
+  }
+  if (!environment.FIREBASE_PROJECT_ID) {
+    errors.push('FIREBASE_PROJECT_ID is required to verify Firebase ID tokens.');
   }
   return errors;
 }

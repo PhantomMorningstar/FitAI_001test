@@ -26,8 +26,8 @@ test('application pages render the shared shell exactly once', async () => {
     assert.equal((html.match(/src="\/assets\/js\/daily-focus-utils\.js"/g) || []).length, 1, `${fileName} daily focus utils`);
     assert.equal((html.match(/src="\/assets\/js\/pwa\.js"/g) || []).length, 1, `${fileName} PWA client`);
     assert.equal((html.match(/src="\/assets\/js\/motion\.js"/g) || []).length, 1, `${fileName} motion client`);
-    assert.equal((html.match(/src="\/assets\/js\/i18n\.js"/g) || []).length, 1, `${fileName} i18n`);
-    assert.equal((html.match(/src="\/assets\/js\/app\.js"/g) || []).length, 1, `${fileName} app script`);
+    assert.equal((html.match(/src="\/assets\/js\/i18n\.js\?v=\d+"/g) || []).length, 1, `${fileName} i18n`);
+    assert.equal((html.match(/src="\/assets\/js\/app\.js\?v=\d+"/g) || []).length, 1, `${fileName} app script`);
     assert.equal((html.match(/id="language-toggle"/g) || []).length, 1, `${fileName} language toggle`);
     assert.equal((html.match(/id="install-app-btn"/g) || []).length, 1, `${fileName} install button`);
     assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
@@ -42,8 +42,12 @@ test('page-specific scripts remain attached to their pages', async () => {
   const profile = await render('profile.ejs');
   assert.match(diary, /food-entry-utils\.js/);
   assert.match(camera, /image-utils\.js/);
+  assert.match(camera, /id="analysis-data-quality"[^>]*hidden/);
   assert.match(roadmap, /weight-utils\.js[\s\S]*roadmap-utils\.js/);
   assert.match(profile, /activity-utils\.js[\s\S]*wellness-utils\.js[\s\S]*reminder-utils\.js[\s\S]*weight-utils\.js/);
+  assert.match(profile, /TDEE tham khảo từ vận động/);
+  assert.match(profile, /không tự động thay đổi mục tiêu calorie hoặc kế hoạch/);
+  assert.doesNotMatch(profile, />TDEE quan sát</);
 });
 
 test('error page uses the shared head without loading application SDKs', async () => {
@@ -55,6 +59,10 @@ test('error page uses the shared head without loading application SDKs', async (
 test('overview renders the profile-based meal suggestion region', async () => {
   const html = await render('index.ejs');
   assert.match(html, /id="meal-suggestions-title"/);
+  assert.match(html, /Ý tưởng món ăn theo mục tiêu của bạn/);
+  assert.match(html, /ngân sách cho cả bữa/);
+  assert.match(html, /id="meal-allergy-warning"[^>]*hidden/);
+  assert.match(html, /nước sốt, công thức thực tế hoặc nhiễm chéo/);
   assert.match(html, /id="meal-suggestions-list"[^>]*aria-live="polite"/);
   assert.match(html, /id="meal-suggestions-status"[^>]*role="status"/);
   assert.match(html, /mục tiêu calorie, protein, mức vận động và dị ứng/);

@@ -45,6 +45,8 @@ test('client monitoring source excludes sensitive error content', () => {
   );
 
   assert.match(source, /unhandledrejection/);
+  assert.match(source, /function rejectionLocation\(reason\)/);
+  assert.match(source, /location\.line/);
   assert.doesNotMatch(source, /event\.message|event\.error\.stack/);
   assert.match(serverMonitor, /Do not log error messages/);
   assert.doesNotMatch(serverMonitor, /req\.body\?\.message|req\.body\?\.stack/);

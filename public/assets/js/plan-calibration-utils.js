@@ -35,7 +35,10 @@
         const totals = new Map();
         (entries || []).forEach((entry) => {
             const calories = Number(entry.calories);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.dateKey) || !Number.isFinite(calories) || calories < 0) return;
+            if (entry.completed !== true
+                || !/^\d{4}-\d{2}-\d{2}$/.test(entry.dateKey)
+                || !Number.isFinite(calories)
+                || calories < 0) return;
             const day = dayNumber(entry.dateKey);
             if (day < startDay || day > endDay) return;
             totals.set(entry.dateKey, (totals.get(entry.dateKey) || 0) + calories);
@@ -155,7 +158,7 @@
             averageLoggedCalories: diary.averageCalories,
             observedTdee,
             suggestedTargetCalories: adjustmentCalories
-                ? Math.max(1200, roundTo(baseCalories + adjustmentCalories, 10))
+                ? roundTo(baseCalories + adjustmentCalories, 10)
                 : baseCalories,
             adjustmentCalories,
             confidence

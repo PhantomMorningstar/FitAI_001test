@@ -27,6 +27,16 @@
                         <div><strong id="diary-total-fat">0 g</strong><span>Chất béo</span></div>
                         <div><strong id="diary-total-fiber">0 g</strong><span>Chất xơ</span></div>
                     </div>
+                    <div class="diary-completion-panel">
+                        <div>
+                            <strong><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Xác nhận nhật ký đã đầy đủ</strong>
+                            <span id="diary-verification-label" class="diary-verification-label">Chưa tự xác nhận</span>
+                            <p class="diary-completion-explanation">Trạng thái đầy đủ do người dùng tự xác nhận. FitAI không tự kiểm chứng món ăn, khẩu phần hoặc đồ uống bị bỏ sót. Chỉ ngày đã tự xác nhận mới được dùng để hiệu chỉnh kế hoạch.</p>
+                            <p class="diary-completion-explanation">Bạn vẫn có thể sửa hoặc xóa món; sau khi thay đổi, ngày đó cần được xác nhận lại.</p>
+                            <p id="diary-completion-status" class="diary-completion-status" role="status" aria-live="polite">Hãy ghi tất cả món và đồ uống có năng lượng trong ngày.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="complete-diary-day-btn" disabled>Xác nhận đã ghi đủ trong ngày</button>
+                    </div>
                     <p id="diary-action-status" class="field-error" role="status" aria-live="polite"></p>
                     <ul class="food-list" id="diary-list" style="list-style: none; padding: 0; margin-top: 15px;"></ul>
                 </div>

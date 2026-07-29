@@ -42,7 +42,8 @@ const calculateWeightPlan = (profile, metrics) => {
     assumptions: {
       kcalPerKg: KCAL_PER_KG_ESTIMATE,
       activityRemainsStable: true,
-      estimateIsLinear: true
+      estimateIsLinear: true,
+      projectionIsEstimateNotPromise: true
     }
   };
 };

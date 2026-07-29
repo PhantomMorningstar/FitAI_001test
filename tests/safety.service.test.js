@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { evaluatePlanSafety } = require('../src/services/safety.service');
+const {
+  evaluateCalorieTargetSafety,
+  evaluatePlanSafety
+} = require('../src/services/safety.service');
 
 const baseProfile = { goal: 'lose', gender: 'Female', weight: 70, targetWeight: 64 };
 const baseMetrics = { bmi: 25.7, targetBmi: 23.5 };
@@ -48,4 +51,15 @@ test('blocks automated plans for excluded health contexts', () => {
     assert.equal(result.allowed, false);
     assert.ok(result.blockers.some(({ code }) => code.startsWith('HEALTH_CONTEXT_')));
   }
+});
+
+test('calibration calorie proposals run through the same safety engine', () => {
+  const evaluation = evaluateCalorieTargetSafety(
+    baseProfile,
+    { ...baseMetrics, tdee: 2000 },
+    basePlan,
+    950
+  );
+  assert.equal(evaluation.safety.allowed, false);
+  assert.ok(evaluation.safety.blockers.some(({ code }) => code === 'CALORIES_DANGEROUSLY_LOW'));
 });

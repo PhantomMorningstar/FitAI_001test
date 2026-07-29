@@ -20,7 +20,8 @@ const weights = (endWeight) => [
 
 const diary = (calories = 1800) => Array.from({ length: 15 }, (_, index) => ({
   dateKey: `2026-07-${String(index + 1).padStart(2, '0')}`,
-  calories
+  calories,
+  completed: true
 }));
 
 test('regression estimates weekly weight rate without relying on two individual readings', () => {
@@ -32,6 +33,17 @@ test('calibration waits for enough weight, diary, and elapsed-day evidence', () 
   assert.equal(result.ready, false);
   assert.equal(result.status, 'collecting');
   assert.equal(result.adjustmentCalories, 0);
+});
+
+test('calibration ignores diary days that the user has not marked complete', () => {
+  const entries = diary().map((entry, index) => ({
+    ...entry,
+    completed: index < 9
+  }));
+  const result = buildPlanCalibration(profile, weights(79), entries, weightUtils);
+  assert.equal(result.ready, false);
+  assert.equal(result.requirements.diaryDays, 9);
+  assert.equal(result.averageLoggedCalories, 1800);
 });
 
 test('calibration keeps calories unchanged when actual loss follows the plan', () => {
@@ -53,6 +65,21 @@ test('calibration suggests only a 100 kcal step when progress is too slow', () =
   assert.equal(result.status, 'too-slow');
   assert.equal(result.adjustmentCalories, -100);
   assert.equal(result.suggestedTargetCalories, 1700);
+});
+
+test('calibration does not silently replace a low proposal with 1200 calories', () => {
+  const lowTargetProfile = {
+    ...profile,
+    plan: { targetCalories: 1050, estimatedWeeklyChangeKg: 0.5 }
+  };
+  const slowWeights = weights(79.8).map((entry, index) => ({
+    ...entry,
+    weightKg: Number((80 - index * 0.04).toFixed(2))
+  }));
+  slowWeights[slowWeights.length - 1].dateKey = '2026-07-15';
+  const result = buildPlanCalibration(lowTargetProfile, slowWeights, diary(1050), weightUtils);
+  assert.equal(result.adjustmentCalories, -100);
+  assert.equal(result.suggestedTargetCalories, 950);
 });
 
 test('calibration suggests eating 100 kcal more when loss is too fast', () => {

@@ -35,7 +35,37 @@ test('USDA nutrients per 100 g scale to the selected portion', () => {
   assert.equal(food.calories, 248);
   assert.equal(food.protein, 46.5);
   assert.equal(food.fat, 5.4);
+  assert.equal(food.nutritionComplete, true);
+  assert.deepEqual(food.missingNutrients, []);
   assert.equal(food.source, 'USDA FoodData Central');
+});
+
+test('USDA missing nutrients remain missing while reported zero stays zero', () => {
+  const food = normalizeFood({
+    ...sampleFood,
+    foodNutrients: [
+      { nutrientId: 1008, value: 165 },
+      { nutrientId: 1003, value: 0 },
+      { nutrientId: 1005, value: 0 },
+      { nutrientId: 1004, value: 3.57 }
+    ]
+  }, 100);
+  assert.equal(food.protein, 0);
+  assert.equal(food.carbs, 0);
+  assert.equal(food.fiber, null);
+  assert.equal(food.nutritionComplete, false);
+  assert.deepEqual(food.missingNutrients, ['fiber']);
+});
+
+test('malformed USDA nutrient values are treated as missing instead of zero', () => {
+  const food = normalizeFood({
+    ...sampleFood,
+    foodNutrients: sampleFood.foodNutrients.map((nutrient) => (
+      nutrient.nutrientId === 1008 ? { ...nutrient, value: 'unknown' } : nutrient
+    ))
+  }, 100);
+  assert.equal(food.calories, null);
+  assert.ok(food.missingNutrients.includes('calories'));
 });
 
 test('nutrition search keeps API credentials server-side and normalizes results', async () => {

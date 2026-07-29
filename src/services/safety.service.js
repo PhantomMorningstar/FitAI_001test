@@ -1,6 +1,7 @@
 const MINIMUM_CALORIES = 1000;
 const LOW_INTAKE_WARNING_CALORIES = 1200;
 const MAX_WEEKLY_LOSS_KG = 0.91;
+const KCAL_PER_KG_ESTIMATE = 7700;
 
 const issue = (code, message) => ({ code, message });
 
@@ -63,7 +64,29 @@ const evaluatePlanSafety = (profile, metrics, plan) => {
   };
 };
 
+const evaluateCalorieTargetSafety = (profile, metrics, plan, proposedTargetCalories) => {
+  const targetCalories = Number(proposedTargetCalories);
+  if (!Number.isFinite(targetCalories) || targetCalories < 0 || targetCalories > 10000) {
+    throw new TypeError('Proposed calorie target is invalid.');
+  }
+  const dailyEnergyDifference = targetCalories - metrics.tdee;
+  const candidatePlan = {
+    ...plan,
+    targetCalories,
+    adjustmentCalories: dailyEnergyDifference,
+    estimatedWeeklyChangeKg: Math.round(
+      Math.abs((dailyEnergyDifference * 7) / KCAL_PER_KG_ESTIMATE) * 100
+    ) / 100
+  };
+  return {
+    proposedTargetCalories: targetCalories,
+    candidatePlan,
+    safety: evaluatePlanSafety(profile, metrics, candidatePlan)
+  };
+};
+
 module.exports = {
+  evaluateCalorieTargetSafety,
   evaluatePlanSafety,
   LOW_INTAKE_WARNING_CALORIES,
   MAX_WEEKLY_LOSS_KG,

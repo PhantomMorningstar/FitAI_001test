@@ -14,7 +14,8 @@ test('production rejects missing, demo, and placeholder USDA keys', () => {
   }).length);
   assert.deepEqual(validateProductionConfig({
     NODE_ENV: 'production',
-    FDC_API_KEY: 'configured-private-key'
+    FDC_API_KEY: 'configured-private-key',
+    FIREBASE_PROJECT_ID: 'fitai-production'
   }), []);
   assert.deepEqual(validateProductionConfig({ NODE_ENV: 'development' }), []);
 });

@@ -265,7 +265,7 @@ a { color: inherit; }
 
 .meal-suggestions-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     margin: 18px 0 12px;
 }
@@ -295,6 +295,59 @@ a { color: inherit; }
 
 .meal-suggestion-item li + li {
     margin-top: 7px;
+}
+
+.meal-suggestion-verification {
+    margin: 12px 0 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.meal-allergy-warning {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 12px;
+    margin-top: 14px;
+    padding: 14px 16px;
+    border: 1px solid #efc46b;
+    border-radius: 14px;
+    background: #fff8e8;
+    color: #714a00;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.meal-allergy-warning[hidden] {
+    display: none;
+}
+
+.meal-allergy-warning strong {
+    white-space: nowrap;
+}
+
+.data-quality-warning {
+    margin: 4px 0 14px;
+    padding: 12px 14px;
+    border: 1px solid #efc46b;
+    border-radius: 12px;
+    background: #fff8e8;
+    color: #714a00;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.data-quality-warning[hidden] {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .meal-allergy-warning {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 760px) {
@@ -390,6 +443,69 @@ a { color: inherit; }
     grid-template-columns: repeat(5, minmax(100px, 1fr));
     gap: 10px;
     margin-top: 16px;
+}
+
+.diary-completion-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--primary-soft);
+}
+
+.diary-completion-panel p {
+    margin: 5px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.diary-completion-panel strong i {
+    margin-right: 6px;
+    color: var(--primary-color);
+}
+
+.diary-verification-label {
+    display: inline-flex;
+    margin: 0 0 0 10px;
+    padding: 4px 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.diary-verification-label.is-confirmed {
+    border-color: rgba(16, 171, 116, 0.28);
+    background: #dcf8ed;
+    color: var(--primary-dark);
+}
+
+.diary-completion-panel .diary-completion-explanation {
+    max-width: 680px;
+}
+
+.diary-completion-panel .diary-completion-status {
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+.diary-completion-panel .btn {
+    flex: 0 0 auto;
+    max-width: 260px;
+    white-space: normal;
+}
+
+@media (max-width: 640px) {
+    .diary-completion-panel {
+        align-items: stretch;
+        flex-direction: column;
+    }
 }
 
 .diary-summary-grid > div {

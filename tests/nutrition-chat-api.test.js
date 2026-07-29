@@ -23,17 +23,20 @@ function post(body) {
   });
 }
 
-test('nutrition chat API validates the question', async () => {
+test('nutrition chat API rejects a request without a Firebase ID token', async () => {
   const response = await post({ message: '' });
   const payload = await response.json();
-  assert.equal(response.status, 422);
-  assert.match(payload.error, /2 ký tự/);
+  assert.equal(response.status, 401);
+  assert.match(payload.error, /Sign in/);
 });
 
-test('nutrition chat API blocks dangerous restriction without calling Gemini', async () => {
-  const response = await post({ message: 'Tôi muốn nhịn đói để xuống cân thật nhanh', context: { language: 'vi' } });
+test('food vision API rejects a request without a Firebase ID token', async () => {
+  const response = await fetch(`${baseUrl}/api/vision/recognize-food`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ imageBase64: 'not-used-without-authentication' })
+  });
   const payload = await response.json();
-  assert.equal(response.status, 200);
-  assert.equal(payload.needsProfessionalHelp, true);
-  assert.ok(payload.caution);
+  assert.equal(response.status, 401);
+  assert.match(payload.error, /Sign in/);
 });

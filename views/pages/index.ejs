@@ -58,6 +58,14 @@
                         <span class="field-error" id="work-activity-error"></span>
                     </div>
                     <div class="form-group" style="margin-top: 20px;">
+                        <label for="dietary-preference">Chế độ ăn</label>
+                        <select id="dietary-preference">
+                            <option value="omnivore">Ăn đa dạng</option>
+                            <option value="vegetarian">Ăn chay có trứng và sữa</option>
+                        </select>
+                        <small>FitAI sẽ loại món thịt và cá khỏi phần gợi ý khi bạn chọn ăn chay.</small>
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
                         <label>Dị ứng thực phẩm (có thể chọn nhiều)</label>
                         <div class="allergy-grid">
                             <button type="button" class="allergy-chip" data-allergy="seafood" aria-pressed="false">Hải sản</button>
@@ -90,6 +98,7 @@
                     <h3>Tóm tắt mục tiêu</h3>
                     <div class="summary-report-box">
                         <p><strong>Mục tiêu:</strong> <span id="rep-goal">...</span></p>
+                        <p><strong>Chế độ ăn:</strong> <span id="rep-dietary-preference">--</span></p>
                         <p><strong>Năng lượng duy trì:</strong> <span id="rep-maintenance-cal">--</span> kcal/ngày</p>
                         <p><strong>Năng lượng mục tiêu:</strong> <span id="rep-cal">--</span> kcal/ngày</p>
                         <p><strong>Điều chỉnh mỗi ngày:</strong> <span id="rep-adjustment-cal">--</span> kcal/ngày</p>
@@ -213,7 +222,10 @@
                             <span class="daily-focus-eyebrow">GỢI Ý THEO HỒ SƠ</span>
                             <h2 id="meal-suggestions-title">Ý tưởng món ăn theo mục tiêu của bạn</h2>
                         </div>
-                        <span id="meal-suggestions-target" class="meal-suggestions-target">Hoàn thành bảng câu hỏi để xem gợi ý</span>
+                        <div class="meal-suggestions-badges">
+                            <span id="meal-suggestions-target" class="meal-suggestions-target">Hoàn thành bảng câu hỏi để xem gợi ý</span>
+                            <span id="meal-dietary-status" class="meal-suggestions-target meal-dietary-status" hidden></span>
+                        </div>
                     </div>
                     <p id="meal-suggestions-guidance" class="subtitle">
                         FitAI dựa trên mục tiêu calorie, protein, mức vận động và dị ứng đã chọn.

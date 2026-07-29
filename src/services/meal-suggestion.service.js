@@ -3,88 +3,104 @@ const MEAL_CATALOG = Object.freeze({
     {
       name: 'Cháo gạo lứt với ức gà và rau',
       tags: ['high-protein', 'high-fiber'],
-      allergens: []
+      allergens: [],
+      vegetarian: false
     },
     {
       name: 'Khoai lang, trứng và rau xanh',
       tags: ['high-protein', 'high-fiber'],
-      allergens: ['eggs']
+      allergens: ['eggs'],
+      vegetarian: true
     },
     {
       name: 'Yến mạch, chuối và sữa chua không đường',
       tags: ['high-fiber'],
-      allergens: ['gluten', 'milk']
+      allergens: ['gluten', 'milk'],
+      vegetarian: true
     },
     {
       name: 'Cơm, đậu phụ và rau củ',
       tags: ['plant-protein', 'high-fiber'],
-      allergens: ['soy']
+      allergens: ['soy'],
+      vegetarian: true
     }
   ],
   lunch: [
     {
       name: 'Ức gà, cơm và rau luộc',
       tags: ['high-protein', 'balanced'],
-      allergens: []
+      allergens: [],
+      vegetarian: false
     },
     {
       name: 'Cá, khoai tây và salad',
       tags: ['high-protein', 'balanced'],
-      allergens: ['seafood']
+      allergens: ['seafood'],
+      vegetarian: false
     },
     {
       name: 'Thịt bò nạc, cơm và rau xào ít dầu',
       tags: ['high-protein', 'balanced'],
-      allergens: []
+      allergens: [],
+      vegetarian: false
     },
     {
       name: 'Đậu phụ, cơm gạo lứt và rau củ',
       tags: ['plant-protein', 'high-fiber'],
-      allergens: ['soy']
+      allergens: ['soy'],
+      vegetarian: true
     }
   ],
   dinner: [
     {
       name: 'Canh gà, cơm và nhiều rau',
       tags: ['high-protein', 'balanced'],
-      allergens: []
+      allergens: [],
+      vegetarian: false
     },
     {
       name: 'Cá hấp, cơm và rau xanh',
       tags: ['high-protein', 'balanced'],
-      allergens: ['seafood']
+      allergens: ['seafood'],
+      vegetarian: false
     },
     {
       name: 'Thịt nạc, khoai lang và rau',
       tags: ['high-protein', 'high-fiber'],
-      allergens: []
+      allergens: [],
+      vegetarian: false
     },
     {
       name: 'Đậu, cơm và bơ',
       tags: ['plant-protein', 'energy-dense', 'high-fiber'],
-      allergens: []
+      allergens: [],
+      vegetarian: true
     }
   ],
   snack: [
     {
       name: 'Trái cây và sữa chua không đường',
       tags: ['high-fiber'],
-      allergens: ['milk']
+      allergens: ['milk'],
+      vegetarian: true
     },
     {
       name: 'Trứng luộc và một phần trái cây',
       tags: ['high-protein'],
-      allergens: ['eggs']
+      allergens: ['eggs'],
+      vegetarian: true
     },
     {
       name: 'Khoai lang và sữa đậu nành không đường',
       tags: ['high-fiber', 'plant-protein'],
-      allergens: ['soy']
+      allergens: ['soy'],
+      vegetarian: true
     },
     {
       name: 'Trái cây và một phần nhỏ hạt không muối',
       tags: ['high-fiber', 'energy-dense'],
-      allergens: ['peanuts']
+      allergens: ['peanuts'],
+      vegetarian: true
     }
   ]
 });
@@ -126,6 +142,7 @@ function compatibleOptions(options, allergies, profile) {
   const excluded = new Set(allergies);
   return options
     .filter((option) => option.allergens.every((allergen) => !excluded.has(allergen)))
+    .filter((option) => profile.dietaryPreference !== 'vegetarian' || option.vegetarian === true)
     .sort((left, right) => rankOption(right, profile) - rankOption(left, profile))
     .slice(0, 2)
     .map(({ name }) => name);
@@ -141,6 +158,7 @@ function generateMealSuggestions(profile, plan, macros, safety) {
   }
 
   const allergies = Array.isArray(profile.allergies) ? profile.allergies : [];
+  const dietaryPreference = profile.dietaryPreference || 'omnivore';
   const calorieTargets = allocateTargets(plan.targetCalories, 'calorieShare');
   const proteinTargets = allocateTargets(macros.protein, 'proteinShare');
   const meals = SLOT_CONFIG.map((slot, index) => ({
@@ -152,6 +170,9 @@ function generateMealSuggestions(profile, plan, macros, safety) {
     proteinTarget: proteinTargets[index],
     options: compatibleOptions(MEAL_CATALOG[slot.key], allergies, profile)
   }));
+  const emptyMealSlots = meals
+    .filter((meal) => meal.options.length === 0)
+    .map((meal) => meal.slot);
 
   const goalGuidance = {
     lose: 'Ưu tiên thực phẩm giàu đạm và chất xơ để hỗ trợ cảm giác no trong mức năng lượng mục tiêu.',
@@ -166,9 +187,17 @@ function generateMealSuggestions(profile, plan, macros, safety) {
       activity: profile.activity,
       targetCalories: plan.targetCalories,
       protein: macros.protein,
-      allergies
+      allergies,
+      dietaryPreference
     },
     guidance: goalGuidance[profile.goal],
+    dietaryGuidance: dietaryPreference === 'vegetarian'
+      ? 'Với chế độ ăn chay, hãy thay đổi nguồn đạm giữa đậu, đậu phụ, trứng hoặc sữa nếu phù hợp với dị ứng của bạn.'
+      : null,
+    compatibilityWarning: emptyMealSlots.length
+      ? 'Một số bữa không còn món mẫu phù hợp với chế độ ăn và dị ứng đã chọn. FitAI sẽ không tự bỏ qua dị ứng; hãy kiểm tra thành phần thực tế và trao đổi với chuyên gia dinh dưỡng nếu chế độ ăn quá hạn chế.'
+      : null,
+    emptyMealSlots,
     meals,
     disclaimer: 'Các con số là ngân sách cho cả bữa, không phải dinh dưỡng đã tính của từng món gợi ý. Muốn biết khẩu phần thực tế, hãy cân nguyên liệu và tra cứu đúng thực phẩm trên USDA trước khi lưu.'
   };

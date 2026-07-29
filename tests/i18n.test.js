@@ -32,6 +32,13 @@ test('English source strings are localized back to Vietnamese', () => {
   );
 });
 
+test('dietary preference labels translate reliably in both directions', () => {
+  assert.equal(translateText('Ăn đa dạng', 'en'), 'Omnivorous');
+  assert.equal(translateText('Ăn chay có trứng và sữa', 'en'), 'Lacto-ovo vegetarian');
+  assert.equal(translateText('Omnivorous', 'vi'), 'Ăn đa dạng');
+  assert.equal(translateText('Lacto-ovo vegetarian', 'vi'), 'Ăn chay có trứng và sữa');
+});
+
 test('dynamic progress messages translate without losing their values', () => {
   assert.equal(translateText('2/4 đã hoàn thành', 'en'), '2/4 completed');
   assert.equal(

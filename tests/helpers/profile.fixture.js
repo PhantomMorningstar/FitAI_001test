@@ -15,6 +15,7 @@ const validProfile = (overrides = {}) => ({
   goal: 'lose',
   targetWeight: 64,
   allergies: [],
+  dietaryPreference: 'omnivore',
   healthContext: {},
   ...overrides
 });

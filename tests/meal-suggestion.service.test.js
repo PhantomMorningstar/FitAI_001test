@@ -43,3 +43,37 @@ test('unsafe profiles do not receive meal suggestions', () => {
   assert.equal(result.available, false);
   assert.deepEqual(result.meals, []);
 });
+
+test('vegetarian profiles only receive meat-free and fish-free meal ideas', () => {
+  const result = generateMealSuggestions(
+    validProfile({ dietaryPreference: 'vegetarian' }),
+    plan,
+    macros,
+    safe
+  );
+  const names = result.meals.flatMap((meal) => meal.options);
+
+  assert.equal(result.basedOn.dietaryPreference, 'vegetarian');
+  assert.ok(names.length >= 4);
+  assert.ok(names.every((name) => !/gà|cá|thịt|bò/i.test(name)));
+  assert.match(result.dietaryGuidance, /chế độ ăn chay/i);
+});
+
+test('restrictive vegetarian allergies expose empty meal slots instead of bypassing filters', () => {
+  const result = generateMealSuggestions(
+    validProfile({
+      dietaryPreference: 'vegetarian',
+      allergies: ['eggs', 'milk', 'soy', 'peanuts', 'gluten']
+    }),
+    plan,
+    macros,
+    safe
+  );
+
+  assert.ok(result.emptyMealSlots.length >= 1);
+  assert.ok(result.meals.some((meal) => meal.options.length === 0));
+  assert.match(result.compatibilityWarning, /không tự bỏ qua dị ứng/i);
+  assert.ok(result.meals.flatMap((meal) => meal.options).every((name) =>
+    !/gà|cá|thịt|bò|trứng|sữa|đậu phụ|đậu nành|yến mạch|hạt/i.test(name)
+  ));
+});

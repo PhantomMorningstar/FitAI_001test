@@ -138,6 +138,7 @@ service cloud.firestore {
             'goal',
             'targetWeight',
             'allergies',
+            'dietaryPreference',
             'healthContext',
             'metrics',
             'plan',
@@ -200,6 +201,9 @@ service cloud.firestore {
             'gluten',
             'soy'
           ])
+          && (!data.keys().hasAny(['dietaryPreference'])
+            || data.dietaryPreference == 'omnivore'
+            || data.dietaryPreference == 'vegetarian')
           && validHealthContext(data)
           && validReminders(data)
           && validDerivedProfileData(data);

@@ -2,6 +2,7 @@ const ALLOWED_GENDERS = new Set(['Male', 'Female']);
 const ALLOWED_ACTIVITIES = new Set(['sedentary', 'lightly', 'moderately']);
 const ALLOWED_GOALS = new Set(['lose', 'maintain', 'gain']);
 const ALLOWED_ALLERGIES = new Set(['seafood', 'peanuts', 'milk', 'eggs', 'gluten', 'soy']);
+const ALLOWED_DIETARY_PREFERENCES = new Set(['omnivore', 'vegetarian']);
 
 const toFiniteNumber = (value) => {
   if (value === '' || value === null || value === undefined) return null;
@@ -67,6 +68,10 @@ const validateProfile = (input, options = {}) => {
   if (allergies.some((allergy) => !ALLOWED_ALLERGIES.has(allergy))) {
     errors.allergies = 'Một hoặc nhiều lựa chọn dị ứng không hợp lệ.';
   }
+  const dietaryPreference = profile.dietaryPreference || 'omnivore';
+  if (!ALLOWED_DIETARY_PREFERENCES.has(dietaryPreference)) {
+    errors.dietaryPreference = 'Lựa chọn chế độ ăn không hợp lệ.';
+  }
   const healthContext = {
     pregnant: profile.healthContext?.pregnant === true,
     breastfeeding: profile.healthContext?.breastfeeding === true,
@@ -87,6 +92,7 @@ const validateProfile = (input, options = {}) => {
       goal: profile.goal,
       targetWeight,
       allergies: [...new Set(allergies)],
+      dietaryPreference,
       healthContext
     }
   };

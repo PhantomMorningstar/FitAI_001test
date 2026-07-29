@@ -263,6 +263,29 @@ a { color: inherit; }
     font-weight: 700;
 }
 
+.meal-suggestions-badges {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.meal-dietary-status.is-vegetarian {
+    background: #e7f8ee;
+    border: 1px solid #9ad7b3;
+}
+
+.meal-compatibility-warning,
+.meal-options-empty {
+    color: #9a5b00;
+    font-weight: 700;
+}
+
+.meal-compatibility-warning {
+    display: inline-block;
+    margin-top: 8px;
+}
+
 .meal-suggestions-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

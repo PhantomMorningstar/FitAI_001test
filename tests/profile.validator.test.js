@@ -11,7 +11,8 @@ const validProfile = {
   activity: 'lightly',
   goal: 'lose',
   targetWeight: 62,
-  allergies: ['milk']
+  allergies: ['milk'],
+  dietaryPreference: 'vegetarian'
 };
 
 test('calculates age without an off-by-one error', () => {
@@ -24,6 +25,7 @@ test('accepts and normalizes a valid adult profile', () => {
   assert.equal(result.valid, true);
   assert.equal(result.data.age, 31);
   assert.equal(result.data.height, 165);
+  assert.equal(result.data.dietaryPreference, 'vegetarian');
 });
 
 test('rejects underage and implausible measurements', () => {
@@ -50,10 +52,12 @@ test('rejects unknown enum and allergy values', () => {
     ...validProfile,
     gender: 'unknown',
     activity: 'extreme',
+    dietaryPreference: 'pescatarian',
     allergies: ['unknown-food']
   }, { today });
   assert.equal(result.valid, false);
   assert.ok(result.errors.gender);
   assert.ok(result.errors.activity);
   assert.ok(result.errors.allergies);
+  assert.ok(result.errors.dietaryPreference);
 });

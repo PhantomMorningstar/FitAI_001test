@@ -64,6 +64,7 @@ test('overview renders the profile-based meal suggestion region', async () => {
   assert.match(html, /id="meal-allergy-warning"[^>]*hidden/);
   assert.match(html, /nước sốt, công thức thực tế hoặc nhiễm chéo/);
   assert.match(html, /id="meal-suggestions-list"[^>]*aria-live="polite"/);
+  assert.match(html, /id="meal-dietary-status"[^>]*hidden/);
   assert.match(html, /id="meal-suggestions-status"[^>]*role="status"/);
   assert.match(html, /mục tiêu calorie, protein, mức vận động và dị ứng/);
 });

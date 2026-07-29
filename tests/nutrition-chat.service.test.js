@@ -25,6 +25,7 @@ test('context allows nutrition fields but drops identity and implausible values'
     currentWeightKg: 75,
     targetCalories: 1800,
     allergies: ['milk'],
+    dietaryPreference: 'vegetarian',
     email: 'private@example.com',
     uid: 'secret',
     tdee: 99999
@@ -32,6 +33,7 @@ test('context allows nutrition fields but drops identity and implausible values'
   assert.equal(context.currentWeightKg, 75);
   assert.equal(context.targetCalories, 1800);
   assert.equal(context.tdee, null);
+  assert.equal(context.dietaryPreference, 'vegetarian');
   assert.equal(context.email, undefined);
   assert.equal(context.uid, undefined);
 });

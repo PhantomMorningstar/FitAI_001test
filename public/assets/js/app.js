@@ -134,6 +134,7 @@ function resetRuntimeUserState() {
         'dash-tdee': '--',
         'dash-goal-cal': '--',
         'rep-age': '--',
+        'rep-dietary-preference': '--',
         'rep-bmi': '--',
         'rep-bmi-category': '',
         'rep-bmr': '--',
@@ -175,6 +176,21 @@ function getCurrentLanguage() {
 
 function translateUI(value) {
     return window.FitAII18n?.translateText(value, getCurrentLanguage()) || value;
+}
+
+function updateDietaryPreferenceLabels() {
+    const select = document.getElementById('dietary-preference');
+    if (!select) return;
+    const canonicalLabels = {
+        omnivore: 'Ăn đa dạng',
+        vegetarian: 'Ăn chay có trứng và sữa'
+    };
+    Array.from(select.options).forEach((option) => {
+        const canonicalLabel = canonicalLabels[option.value];
+        if (canonicalLabel) {
+            option.replaceChildren(document.createTextNode(translateUI(canonicalLabel)));
+        }
+    });
 }
 
 function updateNotificationPermissionUI() {
@@ -436,6 +452,7 @@ function updateMacroTargetsUI(macros) {
 function renderMealSuggestions(suggestions) {
     const list = document.getElementById('meal-suggestions-list');
     const target = document.getElementById('meal-suggestions-target');
+    const dietaryStatus = document.getElementById('meal-dietary-status');
     const guidance = document.getElementById('meal-suggestions-guidance');
     const allocation = document.getElementById('meal-suggestions-allocation');
     const allergyWarning = document.getElementById('meal-allergy-warning');
@@ -449,12 +466,33 @@ function renderMealSuggestions(suggestions) {
             || 'Hoàn thành bảng câu hỏi và kiểm tra an toàn để xem gợi ý món ăn.';
         if (allocation) allocation.hidden = true;
         if (allergyWarning) allergyWarning.hidden = true;
+        if (dietaryStatus) dietaryStatus.hidden = true;
         disclaimer.hidden = true;
         return;
     }
 
     target.textContent = `${suggestions.basedOn.targetCalories} kcal/ngày · ${suggestions.basedOn.protein} g protein`;
-    guidance.textContent = suggestions.guidance;
+    if (dietaryStatus) {
+        const isVegetarian = suggestions.basedOn.dietaryPreference === 'vegetarian';
+        dietaryStatus.textContent = isVegetarian
+            ? 'Đang áp dụng: Ăn chay — đã loại thịt và cá'
+            : 'Đang áp dụng: Ăn đa dạng';
+        dietaryStatus.classList.toggle('is-vegetarian', isVegetarian);
+        dietaryStatus.hidden = false;
+    }
+    guidance.replaceChildren(document.createTextNode(suggestions.guidance));
+    if (suggestions.dietaryGuidance) {
+        const dietaryNote = document.createElement('span');
+        dietaryNote.className = 'meal-dietary-guidance';
+        dietaryNote.textContent = suggestions.dietaryGuidance;
+        guidance.append(document.createElement('br'), dietaryNote);
+    }
+    if (suggestions.compatibilityWarning) {
+        const compatibilityWarning = document.createElement('span');
+        compatibilityWarning.className = 'meal-compatibility-warning';
+        compatibilityWarning.textContent = suggestions.compatibilityWarning;
+        guidance.append(document.createElement('br'), compatibilityWarning);
+    }
     if (allocation) allocation.hidden = false;
     if (allergyWarning) allergyWarning.hidden = false;
     suggestions.meals.forEach((meal) => {
@@ -466,11 +504,18 @@ function renderMealSuggestions(suggestions) {
         targetLine.className = 'meal-suggestion-numbers';
         targetLine.textContent = `Ngân sách bữa: ${meal.sharePercent}% · khoảng ${meal.calorieTarget} kcal · ${meal.proteinTarget} g protein`;
         const options = document.createElement('ul');
-        meal.options.forEach((option) => {
-            const item = document.createElement('li');
-            item.textContent = option;
-            options.appendChild(item);
-        });
+        if (meal.options.length === 0) {
+            const emptyItem = document.createElement('li');
+            emptyItem.className = 'meal-options-empty';
+            emptyItem.textContent = 'Không tìm thấy món phù hợp với lựa chọn hiện tại.';
+            options.appendChild(emptyItem);
+        } else {
+            meal.options.forEach((option) => {
+                const item = document.createElement('li');
+                item.textContent = option;
+                options.appendChild(item);
+            });
+        }
         const verificationNote = document.createElement('p');
         verificationNote.className = 'meal-suggestion-verification';
         verificationNote.textContent = 'Ý tưởng món — chưa tính khẩu phần và dinh dưỡng chính xác. Hãy cân và tra cứu USDA.';
@@ -530,6 +575,7 @@ function loadOnboardingDraft(user = auth.currentUser) {
 
 function populateOnboardingForm(data) {
     if (!data) return;
+    updateDietaryPreferenceLabels();
     const gender = document.querySelector(`input[name="gender"][value="${data.gender}"]`);
     if (gender) gender.checked = true;
     const dobEl = document.getElementById('quiz-dob');
@@ -540,6 +586,8 @@ function populateOnboardingForm(data) {
     if (weightEl && data.weight) weightEl.value = data.weight;
     const activityEl = document.getElementById('work-activity');
     if (activityEl && data.activity) activityEl.value = data.activity;
+    const dietaryPreferenceEl = document.getElementById('dietary-preference');
+    if (dietaryPreferenceEl) dietaryPreferenceEl.value = data.dietaryPreference || 'omnivore';
     const goalEl = document.getElementById('weight-goal');
     if (goalEl && data.goal) goalEl.value = data.goal;
     const targetWeightEl = document.getElementById('target-weight');
@@ -564,6 +612,7 @@ function getOnboardingFormData() {
     const weightEl = document.getElementById('quiz-weight');
     const goalEl = document.getElementById('weight-goal');
     const activityEl = document.getElementById('work-activity');
+    const dietaryPreferenceEl = document.getElementById('dietary-preference');
     const targetWeightEl = document.getElementById('target-weight');
     const allergies = Array.from(document.querySelectorAll('.allergy-chip.selected')).map(chip => chip.dataset.allergy || chip.textContent.trim());
 
@@ -574,6 +623,7 @@ function getOnboardingFormData() {
         weight: weightEl ? weightEl.value : '',
         goal: goalEl ? goalEl.value : 'maintain',
         activity: activityEl ? activityEl.value : 'sedentary',
+        dietaryPreference: dietaryPreferenceEl ? dietaryPreferenceEl.value : 'omnivore',
         targetWeight: targetWeightEl ? targetWeightEl.value : '',
         allergies,
         healthContext: {
@@ -1507,10 +1557,16 @@ function updateProfileUI(data) {
     const profHeight = document.getElementById('prof-height');
     const profWeight = document.getElementById('prof-weight');
     const profGoal = document.getElementById('prof-goal');
+    const profDietaryPreference = document.getElementById('prof-dietary-preference');
 
     if (profGender) profGender.innerText = data.gender || '-';
     if (profHeight) profHeight.innerText = data.height || '-';
     if (profWeight) profWeight.innerText = data.weight || '-';
+    if (profDietaryPreference) {
+        profDietaryPreference.innerText = data.dietaryPreference === 'vegetarian'
+            ? 'Ăn chay có trứng và sữa'
+            : 'Ăn đa dạng';
+    }
     const healthFields = {
         'health-pregnant': data.healthContext?.pregnant,
         'health-breastfeeding': data.healthContext?.breastfeeding,
@@ -1893,6 +1949,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editQuestionsBtn.addEventListener('click', () => {
             setOnboardingCompleted(false);
             resetOnboardingFlow();
+            updateDietaryPreferenceLabels();
             showOnboardingScreen();
         });
     }
@@ -2413,6 +2470,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.addEventListener('fitai:languagechange', () => {
+        updateDietaryPreferenceLabels();
         updateNotificationPermissionUI();
         setDiaryDate(selectedDiaryDateKey, false);
         drawWeightChart(latestWeightEntries);
@@ -2697,7 +2755,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 fat: consumedFat,
                                 fiber: consumedFiber
                             },
-                            allergies: globalProfileData.allergies
+                            allergies: globalProfileData.allergies,
+                            dietaryPreference: globalProfileData.dietaryPreference || 'omnivore'
                         }
                     })
                 });
@@ -2890,8 +2949,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderMealSuggestions(previewResult.mealSuggestions);
                     const weightGoalEl = document.getElementById('weight-goal');
                     const repGoalEl = document.getElementById('rep-goal');
+                    const repDietaryPreferenceEl = document.getElementById('rep-dietary-preference');
                     const goal = weightGoalEl ? weightGoalEl.value : 'maintain';
                     if (repGoalEl) repGoalEl.innerText = goal === 'lose' ? 'Giảm cân' : (goal === 'gain' ? 'Tăng cân' : 'Duy trì cân nặng');
+                    if (repDietaryPreferenceEl) {
+                        repDietaryPreferenceEl.innerText = previewResult.data.dietaryPreference === 'vegetarian'
+                            ? 'Ăn chay có trứng và sữa'
+                            : 'Ăn đa dạng';
+                    }
                 }
                 showQuizStep(currentStep + 1);
                 prevBtn.style.display = 'block';
@@ -2933,9 +2998,10 @@ document.addEventListener("DOMContentLoaded", () => {
             weight: Number(weightEl.value),
             goal: goalEl.value,
             activity: activityEl.value,
+            dietaryPreference: draftData.dietaryPreference,
             targetWeight: Number(targetWeightEl.value),
-            allergies: draftData.allergies
-            ,healthContext: draftData.healthContext
+            allergies: draftData.allergies,
+            healthContext: draftData.healthContext
         };
 
         let validationResult;

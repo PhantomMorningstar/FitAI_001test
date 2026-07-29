@@ -54,6 +54,7 @@ const validStoredProfile = (ownerId = 'user-a', overrides = {}) => ({
   goal: 'lose',
   targetWeight: 70,
   allergies: [],
+  dietaryPreference: 'omnivore',
   healthContext: {
     pregnant: false,
     breastfeeding: false,

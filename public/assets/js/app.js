@@ -178,18 +178,33 @@ function translateUI(value) {
     return window.FitAII18n?.translateText(value, getCurrentLanguage()) || value;
 }
 
-function updateDietaryPreferenceLabels() {
-    const select = document.getElementById('dietary-preference');
-    if (!select) return;
-    const canonicalLabels = {
-        omnivore: 'Ăn đa dạng',
-        vegetarian: 'Ăn chay có trứng và sữa'
-    };
-    Array.from(select.options).forEach((option) => {
-        const canonicalLabel = canonicalLabels[option.value];
-        if (canonicalLabel) {
-            option.replaceChildren(document.createTextNode(translateUI(canonicalLabel)));
+function updateOnboardingSelectLabels() {
+    const selectLabels = {
+        'work-activity': {
+            sedentary: 'Ít vận động (văn phòng / ngồi nhiều)',
+            lightly: 'Vận động nhẹ (đi lại thường xuyên)',
+            moderately: 'Vận động vừa (lao động thể chất / thể thao)'
+        },
+        'dietary-preference': {
+            omnivore: 'Ăn đa dạng',
+            vegetarian: 'Ăn chay có trứng và sữa',
+            vegan: 'Thuần chay (không thịt, cá, trứng, sữa)'
+        },
+        'weight-goal': {
+            lose: 'Giảm cân',
+            maintain: 'Duy trì cân nặng',
+            gain: 'Tăng cân'
         }
+    };
+    Object.entries(selectLabels).forEach(([selectId, canonicalLabels]) => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        Array.from(select.options).forEach((option) => {
+            const canonicalLabel = canonicalLabels[option.value];
+            if (canonicalLabel) {
+                option.replaceChildren(document.createTextNode(translateUI(canonicalLabel)));
+            }
+        });
     });
 }
 
@@ -474,10 +489,13 @@ function renderMealSuggestions(suggestions) {
     target.textContent = `${suggestions.basedOn.targetCalories} kcal/ngày · ${suggestions.basedOn.protein} g protein`;
     if (dietaryStatus) {
         const isVegetarian = suggestions.basedOn.dietaryPreference === 'vegetarian';
-        dietaryStatus.textContent = isVegetarian
-            ? 'Đang áp dụng: Ăn chay — đã loại thịt và cá'
-            : 'Đang áp dụng: Ăn đa dạng';
-        dietaryStatus.classList.toggle('is-vegetarian', isVegetarian);
+        const isVegan = suggestions.basedOn.dietaryPreference === 'vegan';
+        dietaryStatus.textContent = isVegan
+            ? 'Đang áp dụng: Thuần chay — đã loại thịt, cá, trứng và sữa'
+            : (isVegetarian
+                ? 'Đang áp dụng: Ăn chay — đã loại thịt và cá'
+                : 'Đang áp dụng: Ăn đa dạng');
+        dietaryStatus.classList.toggle('is-vegetarian', isVegetarian || isVegan);
         dietaryStatus.hidden = false;
     }
     guidance.replaceChildren(document.createTextNode(suggestions.guidance));
@@ -575,7 +593,7 @@ function loadOnboardingDraft(user = auth.currentUser) {
 
 function populateOnboardingForm(data) {
     if (!data) return;
-    updateDietaryPreferenceLabels();
+    updateOnboardingSelectLabels();
     const gender = document.querySelector(`input[name="gender"][value="${data.gender}"]`);
     if (gender) gender.checked = true;
     const dobEl = document.getElementById('quiz-dob');
@@ -1563,9 +1581,11 @@ function updateProfileUI(data) {
     if (profHeight) profHeight.innerText = data.height || '-';
     if (profWeight) profWeight.innerText = data.weight || '-';
     if (profDietaryPreference) {
-        profDietaryPreference.innerText = data.dietaryPreference === 'vegetarian'
-            ? 'Ăn chay có trứng và sữa'
-            : 'Ăn đa dạng';
+        profDietaryPreference.innerText = data.dietaryPreference === 'vegan'
+            ? 'Thuần chay (không thịt, cá, trứng, sữa)'
+            : (data.dietaryPreference === 'vegetarian'
+                ? 'Ăn chay có trứng và sữa'
+                : 'Ăn đa dạng');
     }
     const healthFields = {
         'health-pregnant': data.healthContext?.pregnant,
@@ -1949,7 +1969,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editQuestionsBtn.addEventListener('click', () => {
             setOnboardingCompleted(false);
             resetOnboardingFlow();
-            updateDietaryPreferenceLabels();
+            updateOnboardingSelectLabels();
             showOnboardingScreen();
         });
     }
@@ -2223,6 +2243,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 return;
             }
+            const dietaryConflict = window.FitAIDietaryUtils?.findDietaryConflict(
+                latestFoodAnalysis.name,
+                globalProfileData?.dietaryPreference
+            );
+            if (dietaryConflict?.conflict) {
+                const confirmed = window.confirm(translateUI(
+                    globalProfileData?.dietaryPreference === 'vegan'
+                        ? 'Tên món đã chọn có dấu hiệu chứa nguyên liệu động vật, trong khi hồ sơ của bạn đang chọn thuần chay. Bạn vẫn muốn lưu món này?'
+                        : 'Tên món đã chọn có dấu hiệu chứa thịt hoặc cá, trong khi hồ sơ của bạn đang chọn ăn chay. Bạn vẫn muốn lưu món này?'
+                ));
+                if (!confirmed) {
+                    if (foodSearchStatus) {
+                        foodSearchStatus.textContent = 'Đã hủy lưu để bạn kiểm tra lại món và thành phần thực tế.';
+                    }
+                    return;
+                }
+            }
             addFoodBtn.disabled = true;
             try {
                 await saveFoodToFirebase({
@@ -2470,7 +2507,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.addEventListener('fitai:languagechange', () => {
-        updateDietaryPreferenceLabels();
+        updateOnboardingSelectLabels();
         updateNotificationPermissionUI();
         setDiaryDate(selectedDiaryDateKey, false);
         drawWeightChart(latestWeightEntries);
@@ -2917,6 +2954,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.innerText = 'Tiếp theo';
         clearValidationErrors();
+        showSafetyFeedback(null);
         setQuizProgress();
     }
 
@@ -2953,9 +2991,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const goal = weightGoalEl ? weightGoalEl.value : 'maintain';
                     if (repGoalEl) repGoalEl.innerText = goal === 'lose' ? 'Giảm cân' : (goal === 'gain' ? 'Tăng cân' : 'Duy trì cân nặng');
                     if (repDietaryPreferenceEl) {
-                        repDietaryPreferenceEl.innerText = previewResult.data.dietaryPreference === 'vegetarian'
-                            ? 'Ăn chay có trứng và sữa'
-                            : 'Ăn đa dạng';
+                        repDietaryPreferenceEl.innerText = previewResult.data.dietaryPreference === 'vegan'
+                            ? 'Thuần chay (không thịt, cá, trứng, sữa)'
+                            : (previewResult.data.dietaryPreference === 'vegetarian'
+                                ? 'Ăn chay có trứng và sữa'
+                                : 'Ăn đa dạng');
                     }
                 }
                 showQuizStep(currentStep + 1);
@@ -2969,6 +3009,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         prevBtn.addEventListener('click', () => {
             if (currentStep > 1) {
+                clearValidationErrors();
+                showSafetyFeedback(null);
                 showQuizStep(currentStep - 1);
                 nextBtn.innerText = 'Tiếp theo';
                 if (currentStep === 1) prevBtn.style.display = 'none';

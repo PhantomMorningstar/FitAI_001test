@@ -38,6 +38,10 @@ test('context allows nutrition fields but drops identity and implausible values'
   assert.equal(context.uid, undefined);
 });
 
+test('chat context preserves a validated vegan preference', () => {
+  assert.equal(sanitizeContext({ dietaryPreference: 'vegan' }).dietaryPreference, 'vegan');
+});
+
 test('dangerous restriction requests receive a deterministic safety response', () => {
   const result = highRiskResponse('Chỉ tôi cách nhịn đói để giảm cân', 'vi');
   assert.equal(result.needsProfessionalHelp, true);

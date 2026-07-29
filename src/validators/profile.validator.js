@@ -2,7 +2,7 @@ const ALLOWED_GENDERS = new Set(['Male', 'Female']);
 const ALLOWED_ACTIVITIES = new Set(['sedentary', 'lightly', 'moderately']);
 const ALLOWED_GOALS = new Set(['lose', 'maintain', 'gain']);
 const ALLOWED_ALLERGIES = new Set(['seafood', 'peanuts', 'milk', 'eggs', 'gluten', 'soy']);
-const ALLOWED_DIETARY_PREFERENCES = new Set(['omnivore', 'vegetarian']);
+const ALLOWED_DIETARY_PREFERENCES = new Set(['omnivore', 'vegetarian', 'vegan']);
 
 const toFiniteNumber = (value) => {
   if (value === '' || value === null || value === undefined) return null;

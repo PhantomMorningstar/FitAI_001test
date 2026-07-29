@@ -116,6 +116,8 @@ test('profiles reject malformed, implausible, goal-inconsistent, and unknown fie
   await assertFails(setDoc(profile, validStoredProfile('user-a', { activity: 'extreme' })));
   await assertFails(setDoc(profile, validStoredProfile('user-a', { goal: 'lose', targetWeight: 90 })));
   await assertFails(setDoc(profile, validStoredProfile('user-a', { allergies: ['unknown'] })));
+  await assertSucceeds(setDoc(profile, validStoredProfile('user-a', { dietaryPreference: 'vegan' })));
+  await assertFails(setDoc(profile, validStoredProfile('user-a', { dietaryPreference: 'pescatarian' })));
   await assertFails(setDoc(profile, validStoredProfile('user-a', { admin: true })));
 });
 

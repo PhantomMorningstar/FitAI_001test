@@ -61,3 +61,9 @@ test('rejects unknown enum and allergy values', () => {
   assert.ok(result.errors.allergies);
   assert.ok(result.errors.dietaryPreference);
 });
+
+test('accepts vegan as a supported dietary preference', () => {
+  const result = validateProfile({ ...validProfile, dietaryPreference: 'vegan' }, { today });
+  assert.equal(result.valid, true);
+  assert.equal(result.data.dietaryPreference, 'vegan');
+});

@@ -37,6 +37,17 @@ test('dietary preference labels translate reliably in both directions', () => {
   assert.equal(translateText('Ăn chay có trứng và sữa', 'en'), 'Lacto-ovo vegetarian');
   assert.equal(translateText('Omnivorous', 'vi'), 'Ăn đa dạng');
   assert.equal(translateText('Lacto-ovo vegetarian', 'vi'), 'Ăn chay có trứng và sữa');
+  assert.equal(
+    translateText('Thuần chay (không thịt, cá, trứng, sữa)', 'en'),
+    'Vegan (no meat, fish, eggs, or dairy)'
+  );
+});
+
+test('full activity option labels translate in both directions', () => {
+  const vietnamese = 'Vận động nhẹ (đi lại thường xuyên)';
+  const english = 'Lightly active (regular walking)';
+  assert.equal(translateText(vietnamese, 'en'), english);
+  assert.equal(translateText(english, 'vi'), vietnamese);
 });
 
 test('dynamic progress messages translate without losing their values', () => {

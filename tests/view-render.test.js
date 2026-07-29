@@ -24,6 +24,7 @@ test('application pages render the shared shell exactly once', async () => {
     assert.equal((html.match(/firebase-app-compat\.js/g) || []).length, 1, `${fileName} Firebase SDK`);
     assert.equal((html.match(/src="\/assets\/js\/date-utils\.js"/g) || []).length, 1, `${fileName} date utils`);
     assert.equal((html.match(/src="\/assets\/js\/daily-focus-utils\.js"/g) || []).length, 1, `${fileName} daily focus utils`);
+    assert.equal((html.match(/src="\/assets\/js\/dietary-utils\.js\?v=\d+"/g) || []).length, 1, `${fileName} dietary utils`);
     assert.equal((html.match(/src="\/assets\/js\/pwa\.js"/g) || []).length, 1, `${fileName} PWA client`);
     assert.equal((html.match(/src="\/assets\/js\/motion\.js"/g) || []).length, 1, `${fileName} motion client`);
     assert.equal((html.match(/src="\/assets\/js\/i18n\.js\?v=\d+"/g) || []).length, 1, `${fileName} i18n`);

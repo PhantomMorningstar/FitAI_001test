@@ -77,3 +77,18 @@ test('restrictive vegetarian allergies expose empty meal slots instead of bypass
     !/gà|cá|thịt|bò|trứng|sữa|đậu phụ|đậu nành|yến mạch|hạt/i.test(name)
   ));
 });
+
+test('vegan profiles exclude meat, fish, eggs, and dairy meal ideas', () => {
+  const result = generateMealSuggestions(
+    validProfile({ dietaryPreference: 'vegan' }),
+    plan,
+    macros,
+    safe
+  );
+  const names = result.meals.flatMap((meal) => meal.options);
+
+  assert.equal(result.basedOn.dietaryPreference, 'vegan');
+  assert.ok(names.length >= 4);
+  assert.ok(names.every((name) => !/gà|cá|thịt|bò|trứng|sữa chua/i.test(name)));
+  assert.match(result.dietaryGuidance, /đạm thực vật/i);
+});

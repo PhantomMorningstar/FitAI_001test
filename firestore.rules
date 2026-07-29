@@ -203,7 +203,8 @@ service cloud.firestore {
           ])
           && (!data.keys().hasAny(['dietaryPreference'])
             || data.dietaryPreference == 'omnivore'
-            || data.dietaryPreference == 'vegetarian')
+            || data.dietaryPreference == 'vegetarian'
+            || data.dietaryPreference == 'vegan')
           && validHealthContext(data)
           && validReminders(data)
           && validDerivedProfileData(data);

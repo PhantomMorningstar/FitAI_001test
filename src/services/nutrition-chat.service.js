@@ -31,7 +31,7 @@ function sanitizeContext(context) {
   return {
     language: source.language === 'en' ? 'en' : 'vi',
     goal: ['lose', 'maintain', 'gain'].includes(source.goal) ? source.goal : null,
-    dietaryPreference: ['omnivore', 'vegetarian'].includes(source.dietaryPreference)
+    dietaryPreference: ['omnivore', 'vegetarian', 'vegan'].includes(source.dietaryPreference)
       ? source.dietaryPreference
       : 'omnivore',
     currentWeightKg: number(source.currentWeightKg, 30, 350),

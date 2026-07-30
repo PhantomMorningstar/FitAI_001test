@@ -1,6 +1,7 @@
 const FDC_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 const FDC_FOOD_URL = 'https://api.nal.usda.gov/fdc/v1/food';
 const MAX_QUERY_LENGTH = 100;
+const BARCODE_PATTERN = /^\d{8}$|^\d{12,14}$/;
 
 const NUTRIENT_IDS = {
   calories: [1008, 2047, 2048],
@@ -23,6 +24,20 @@ function validateSearchInput(query, grams) {
     errors.push('Serving weight must be between 1 and 2000 grams.');
   }
   return { valid: errors.length === 0, errors, query: normalizedQuery, grams: normalizedGrams };
+}
+
+function validateBarcode(value) {
+  const barcode = String(value || '').replace(/\D/g, '');
+  if (!BARCODE_PATTERN.test(barcode)) {
+    const error = new Error('Barcode must contain 8, 12, 13, or 14 digits.');
+    error.statusCode = 422;
+    throw error;
+  }
+  return barcode;
+}
+
+function comparableBarcode(value) {
+  return String(value || '').replace(/\D/g, '').replace(/^0+/, '');
 }
 
 function nutrientValue(food, ids) {
@@ -153,11 +168,45 @@ async function searchFoods({ query, grams = 100, apiKey, fetchImpl = fetch }) {
   return (payload.foods || []).map((food) => normalizeFood(food, input.grams));
 }
 
+async function searchBrandedFoodByBarcode({ barcode, grams = 100, apiKey, fetchImpl = fetch }) {
+  const validBarcode = validateBarcode(barcode);
+  const input = validateSearchInput('branded food', grams);
+  if (!input.valid) {
+    const error = new Error(input.errors.join(' '));
+    error.statusCode = 422;
+    throw error;
+  }
+  const response = await fetchImpl(`${FDC_SEARCH_URL}?api_key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: validBarcode,
+      dataType: ['Branded'],
+      pageSize: 10
+    }),
+    signal: AbortSignal.timeout(8000)
+  });
+  if (!response.ok) {
+    const error = new Error(response.status === 429
+      ? 'USDA is temporarily rate limiting barcode searches. Please try again later.'
+      : 'The branded-food database is temporarily unavailable. Enter the product name instead.');
+    error.statusCode = response.status === 429 ? 429 : 502;
+    throw error;
+  }
+  const payload = await response.json();
+  const expected = comparableBarcode(validBarcode);
+  return (payload.foods || [])
+    .filter((food) => comparableBarcode(food.gtinUpc) === expected)
+    .map((food) => normalizeFood(food, input.grams));
+}
+
 module.exports = {
   fetchFoodDetails,
   normalizeFood,
   normalizePortions,
+  searchBrandedFoodByBarcode,
   searchFoods,
+  validateBarcode,
   validateFdcId,
   validateSearchInput
 };

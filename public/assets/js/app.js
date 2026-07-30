@@ -1802,6 +1802,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const analysisFat = getEl('analysis-fat');
     const analysisFiber = getEl('analysis-fiber');
     const analysisDataQuality = getEl('analysis-data-quality');
+    const labelFiberConfirmation = getEl('label-fiber-confirmation');
+    const confirmLabelFiberZero = getEl('confirm-label-fiber-zero');
     const addFoodBtn = getEl('add-food-btn');
     const foodSearchQuery = getEl('food-search-query');
     const foodServingGrams = getEl('food-serving-grams');
@@ -1816,8 +1818,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const visionCandidatesLabel = getEl('vision-candidates-label');
     const visionConfidence = getEl('vision-confidence');
     const confirmFoodCandidateBtn = getEl('confirm-food-candidate-btn');
+    const barcodeVideo = getEl('barcode-video');
+    const barcodeInput = getEl('barcode-input');
+    const barcodeStatus = getEl('barcode-status');
+    const startBarcodeScanBtn = getEl('start-barcode-scan-btn');
+    const stopBarcodeScanBtn = getEl('stop-barcode-scan-btn');
+    const lookupBarcodeBtn = getEl('lookup-barcode-btn');
     let foodSearchResults = [];
     let selectedFoodImageDataUrl = '';
+    let labelFiberBaseAnalysis = null;
+    let barcodeStream = null;
+    let barcodeScanFrame = null;
+    let barcodeDetector = null;
+    let lastBarcodeScanAt = 0;
 
     function resetFoodAnalysis() {
         latestFoodAnalysis = null;
@@ -1831,6 +1844,9 @@ document.addEventListener("DOMContentLoaded", () => {
             analysisDataQuality.hidden = true;
             analysisDataQuality.textContent = '';
         }
+        labelFiberBaseAnalysis = null;
+        if (confirmLabelFiberZero) confirmLabelFiberZero.checked = false;
+        if (labelFiberConfirmation) labelFiberConfirmation.hidden = true;
         if (addFoodBtn) addFoodBtn.disabled = true;
         if (recognizeFoodBtn) recognizeFoodBtn.disabled = false;
         if (analysisResult) analysisResult.style.display = 'none';
@@ -1991,6 +2007,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function showFoodAnalysis(result) {
         latestFoodAnalysis = result;
+        labelFiberBaseAnalysis = result;
         const formatNutrient = (value, unit) => value === null || value === undefined
             ? 'Không có dữ liệu'
             : `${value} ${unit}`;
@@ -2004,6 +2021,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const missingNutrients = Array.isArray(result.missingNutrients)
             ? result.missingNutrients
             : [];
+        const canConfirmFiberFromLabel = result.dataType === 'Branded'
+            && missingNutrients.length === 1
+            && missingNutrients[0] === 'fiber';
         if (analysisFoodName) analysisFoodName.innerText = result.name;
         if (analysisCalories) analysisCalories.innerText = formatNutrient(result.calories, 'kcal');
         if (analysisProtein) analysisProtein.innerText = formatNutrient(result.protein, 'g');
@@ -2017,13 +2037,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (analysisDataQuality) {
             analysisDataQuality.hidden = missingNutrients.length === 0;
-            analysisDataQuality.textContent = missingNutrients.length
-                ? `Không thể lưu bản ghi này vì USDA thiếu: ${missingNutrients.map((name) => nutrientLabels[name] || name).join(', ')}. Hãy chọn bản ghi khác có đủ dữ liệu.`
+            analysisDataQuality.textContent = canConfirmFiberFromLabel
+                ? 'USDA không khai báo chất xơ cho sản phẩm này. Hãy kiểm tra nhãn và chỉ xác nhận 0 g nếu nhãn hỗ trợ điều đó.'
+                : missingNutrients.length
+                    ? `Không thể lưu bản ghi này vì USDA thiếu: ${missingNutrients.map((name) => nutrientLabels[name] || name).join(', ')}. Hãy chọn bản ghi khác có đủ dữ liệu.`
                 : '';
         }
+        if (confirmLabelFiberZero) confirmLabelFiberZero.checked = false;
+        if (labelFiberConfirmation) labelFiberConfirmation.hidden = !canConfirmFiberFromLabel;
         if (addFoodBtn) addFoodBtn.disabled = missingNutrients.length > 0;
         if (analysisResult) analysisResult.style.display = 'flex';
     }
+
+    confirmLabelFiberZero?.addEventListener('change', () => {
+        if (!labelFiberBaseAnalysis) return;
+        if (confirmLabelFiberZero.checked) {
+            latestFoodAnalysis = {
+                ...labelFiberBaseAnalysis,
+                fiber: 0,
+                missingNutrients: [],
+                nutritionComplete: true,
+                source: `${labelFiberBaseAnalysis.source} + label confirmation`
+            };
+            if (analysisFiber) analysisFiber.innerText = '0 g';
+            if (analysisDataQuality) {
+                analysisDataQuality.hidden = false;
+                analysisDataQuality.textContent = 'Chất xơ 0 g do người dùng xác nhận từ nhãn sản phẩm.';
+            }
+            if (addFoodBtn) addFoodBtn.disabled = false;
+            return;
+        }
+        latestFoodAnalysis = labelFiberBaseAnalysis;
+        if (analysisFiber) analysisFiber.innerText = 'Không có dữ liệu';
+        if (analysisDataQuality) {
+            analysisDataQuality.hidden = false;
+            analysisDataQuality.textContent = 'USDA không khai báo chất xơ cho sản phẩm này. Hãy kiểm tra nhãn và chỉ xác nhận 0 g nếu nhãn hỗ trợ điều đó.';
+        }
+        if (addFoodBtn) addFoodBtn.disabled = true;
+    });
 
     if (foodUploadInput) {
         foodUploadInput.addEventListener('change', async () => {
@@ -2119,6 +2170,142 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return response.json();
     }
+
+    function stopBarcodeScanner() {
+        if (barcodeScanFrame) cancelAnimationFrame(barcodeScanFrame);
+        barcodeScanFrame = null;
+        if (barcodeStream) barcodeStream.getTracks().forEach((track) => track.stop());
+        barcodeStream = null;
+        if (barcodeVideo) {
+            barcodeVideo.pause();
+            barcodeVideo.srcObject = null;
+            barcodeVideo.style.display = 'none';
+        }
+        if (startBarcodeScanBtn) startBarcodeScanBtn.style.display = 'inline-flex';
+        if (stopBarcodeScanBtn) stopBarcodeScanBtn.style.display = 'none';
+    }
+
+    async function lookupBrandedProduct(barcode) {
+        const normalizedBarcode = String(barcode || '').replace(/\D/g, '');
+        if (!/^(?:\d{8}|\d{12,14})$/.test(normalizedBarcode)) {
+            throw new Error('Mã vạch phải có 8, 12, 13 hoặc 14 chữ số.');
+        }
+        if (barcodeInput) barcodeInput.value = normalizedBarcode;
+        if (barcodeStatus) barcodeStatus.textContent = 'Đang tìm sản phẩm thương hiệu trong USDA...';
+        if (lookupBarcodeBtn) lookupBarcodeBtn.disabled = true;
+        try {
+            const grams = Number(foodServingGrams?.value || 100);
+            const response = await fetch(`/api/nutrition/barcode/${encodeURIComponent(normalizedBarcode)}?grams=${encodeURIComponent(grams)}`);
+            const payload = await readJsonResponse(response);
+            if (!response.ok) throw new Error(payload.error || 'Không thể tra cứu mã vạch này.');
+            foodSearchResults = payload.foods || [];
+            if (!foodSearchResults.length) {
+                throw new Error('Không tìm thấy mã này trong USDA. Hãy nhập tên sản phẩm hoặc kiểm tra nhãn dinh dưỡng.');
+            }
+            if (foodResultSelect) {
+                foodResultSelect.replaceChildren(...foodSearchResults.map((food, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${food.name}${food.brandName ? ` — ${food.brandName}` : ''}`;
+                    return option;
+                }));
+            }
+            await loadSelectedFoodDetails(foodSearchResults[0], grams);
+            if (foodSearchQuery) foodSearchQuery.value = foodSearchResults[0].name;
+            if (barcodeStatus) {
+                barcodeStatus.textContent = `Đã tìm thấy ${foodSearchResults.length} sản phẩm. Hãy đối chiếu tên thương hiệu và khẩu phần trên nhãn.`;
+            }
+        } finally {
+            if (lookupBarcodeBtn) lookupBarcodeBtn.disabled = false;
+        }
+    }
+
+    async function scanBarcodeFrame(timestamp) {
+        if (!barcodeStream || !barcodeDetector || !barcodeVideo) return;
+        if (timestamp - lastBarcodeScanAt >= 250 && barcodeVideo.readyState >= 2) {
+            lastBarcodeScanAt = timestamp;
+            try {
+                const detections = await barcodeDetector.detect(barcodeVideo);
+                const barcode = detections.find((item) => item.rawValue)?.rawValue;
+                if (barcode) {
+                    stopBarcodeScanner();
+                    if (barcodeStatus) barcodeStatus.textContent = `Đã quét mã ${barcode}. Đang tra cứu sản phẩm...`;
+                    try {
+                        await lookupBrandedProduct(barcode);
+                    } catch (error) {
+                        if (barcodeStatus) barcodeStatus.textContent = error.message;
+                    }
+                    return;
+                }
+            } catch {
+                stopBarcodeScanner();
+                if (barcodeStatus) barcodeStatus.textContent = 'Không thể đọc mã vạch. Hãy nhập dãy số bên dưới mã.';
+                return;
+            }
+        }
+        barcodeScanFrame = requestAnimationFrame(scanBarcodeFrame);
+    }
+
+    if (startBarcodeScanBtn) {
+        startBarcodeScanBtn.addEventListener('click', async () => {
+            if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+                if (barcodeStatus) barcodeStatus.textContent = 'Quét trực tiếp cần HTTPS hoặc localhost. Bạn vẫn có thể nhập mã bằng tay.';
+                return;
+            }
+            if (!('BarcodeDetector' in window)) {
+                if (barcodeStatus) barcodeStatus.textContent = 'Trình duyệt này chưa hỗ trợ quét mã. Hãy nhập dãy số bên dưới mã vạch.';
+                barcodeInput?.focus();
+                return;
+            }
+            startBarcodeScanBtn.disabled = true;
+            try {
+                const supportedFormats = typeof window.BarcodeDetector.getSupportedFormats === 'function'
+                    ? await window.BarcodeDetector.getSupportedFormats()
+                    : [];
+                const requestedFormats = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
+                    .filter((format) => supportedFormats.includes(format));
+                barcodeDetector = new window.BarcodeDetector(
+                    requestedFormats.length ? { formats: requestedFormats } : undefined
+                );
+                barcodeStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                barcodeVideo.srcObject = barcodeStream;
+                barcodeVideo.style.display = 'block';
+                await barcodeVideo.play();
+                startBarcodeScanBtn.style.display = 'none';
+                if (stopBarcodeScanBtn) stopBarcodeScanBtn.style.display = 'inline-flex';
+                if (barcodeStatus) barcodeStatus.textContent = 'Đưa mã vạch vào giữa khung hình và giữ máy ổn định.';
+                barcodeScanFrame = requestAnimationFrame(scanBarcodeFrame);
+            } catch {
+                stopBarcodeScanner();
+                if (barcodeStatus) barcodeStatus.textContent = 'Không mở được camera. Hãy cấp quyền camera hoặc nhập mã bằng tay.';
+            } finally {
+                startBarcodeScanBtn.disabled = false;
+            }
+        });
+    }
+
+    stopBarcodeScanBtn?.addEventListener('click', () => {
+        stopBarcodeScanner();
+        if (barcodeStatus) barcodeStatus.textContent = 'Đã dừng quét mã.';
+    });
+
+    lookupBarcodeBtn?.addEventListener('click', async () => {
+        stopBarcodeScanner();
+        try {
+            await lookupBrandedProduct(barcodeInput?.value);
+        } catch (error) {
+            if (barcodeStatus) barcodeStatus.textContent = error.message;
+        }
+    });
+
+    barcodeInput?.addEventListener('input', () => {
+        barcodeInput.value = barcodeInput.value.replace(/\D/g, '').slice(0, 14);
+    });
+
+    window.addEventListener('pagehide', stopBarcodeScanner);
 
     function applyVisionCandidate(candidate) {
         if (!candidate || !foodSearchQuery) return;

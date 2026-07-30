@@ -146,6 +146,17 @@ test('missing USDA nutrients are explained without translating them as zero', ()
   );
 });
 
+test('dynamic nutrition labels and label-confirmed fiber are translated', () => {
+  assert.equal(translateText('Chất đạm:', 'en'), 'Protein:');
+  assert.equal(translateText('Tinh bột:', 'en'), 'Carbs:');
+  assert.equal(translateText('Chất béo:', 'en'), 'Fat:');
+  assert.equal(translateText('Chất xơ:', 'en'), 'Fiber:');
+  assert.equal(
+    translateText('Chất xơ 0 g do người dùng xác nhận từ nhãn sản phẩm.', 'en'),
+    'Fiber 0 g was confirmed by the user from the product label.'
+  );
+});
+
 test('Firebase-protected AI errors are available in both languages', () => {
   assert.equal(
     translateText('Hãy đăng nhập để sử dụng tính năng AI.', 'en'),

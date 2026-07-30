@@ -11,6 +11,20 @@
                 </div>
                 <div class="section-card grid-2-columns">
                     <div class="upload-zone">
+                        <section class="barcode-scanner" aria-labelledby="barcode-scanner-title" style="margin-bottom:20px; padding:16px; border:1px solid var(--border-color); border-radius:12px; background:var(--surface-muted);">
+                            <h2 id="barcode-scanner-title" style="font-size:18px; margin:0 0 6px;">Quét sản phẩm đóng gói</h2>
+                            <p class="subtitle">Quét mã UPC/EAN trên chai, lon hoặc bao bì để tìm sản phẩm thương hiệu trong USDA.</p>
+                            <video id="barcode-video" playsinline muted aria-label="Khung hình quét mã vạch" style="display:none; width:100%; max-height:260px; margin-top:12px; border-radius:12px; background:#111;"></video>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+                                <button type="button" class="btn btn-secondary" id="start-barcode-scan-btn" style="flex:1;">Mở máy quét mã</button>
+                                <button type="button" class="btn btn-secondary" id="stop-barcode-scan-btn" style="display:none; flex:1;">Dừng quét</button>
+                            </div>
+                            <label for="barcode-input" style="display:block; margin-top:12px; font-weight:600;">Mã UPC/EAN</label>
+                            <input id="barcode-input" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]*" maxlength="14" placeholder="Ví dụ: 049000050103" style="width:100%; margin-top:6px;">
+                            <button type="button" class="btn btn-primary" id="lookup-barcode-btn" style="margin-top:10px; width:100%;">Tìm sản phẩm thương hiệu</button>
+                            <p id="barcode-status" class="subtitle" role="status" style="margin-top:10px;"></p>
+                            <p class="subtitle" style="margin-top:8px;">Không phải mọi sản phẩm Việt Nam đều có trong USDA. Nếu không tìm thấy, hãy nhập tên sản phẩm hoặc đối chiếu nhãn dinh dưỡng.</p>
+                        </section>
                         <input type="file" id="food-upload" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" hidden>
                         <label for="food-upload" class="upload-label">
                             <i class="fa-solid fa-camera" style="font-size: 46px; color: var(--primary-color);"></i>
@@ -44,6 +58,13 @@
                             <div class="calorie-tag" style="background: rgba(46,204,113,0.1); color:#2ecc71; padding:6px 20px; border-radius:20px; font-weight:bold;">Chất xơ: <span id="analysis-fiber">-- g</span></div>
                         </div>
                         <p id="analysis-data-quality" class="data-quality-warning" role="status" hidden></p>
+                        <div id="label-fiber-confirmation" class="data-quality-warning" hidden style="text-align:left; margin-top:10px;">
+                            <label for="confirm-label-fiber-zero" style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+                                <input id="confirm-label-fiber-zero" type="checkbox" style="margin-top:3px;">
+                                <span>Tôi đã kiểm tra nhãn sản phẩm và xác nhận chất xơ là 0 g.</span>
+                            </label>
+                            <p class="subtitle" style="margin-top:6px;">Chỉ xác nhận khi nhãn thật sự ghi 0 g hoặc “not a significant source of dietary fiber”.</p>
+                        </div>
                         <label for="food-result-select" style="font-weight:600;">Chọn kết quả gần đúng nhất</label>
                         <select id="food-result-select" style="width:100%; margin-top:8px;"></select>
                         <label for="food-portion-select" id="food-portion-label" style="display:none; margin-top:12px; font-weight:600;">Chọn khẩu phần USDA</label>

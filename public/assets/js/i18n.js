@@ -94,6 +94,24 @@
         'Thời gian đạt mục tiêu là ước tính thô, không phải cam kết. FitAI sẽ cần đánh giá lại bằng xu hướng cân nặng thực tế.': 'Time to goal is a rough estimate, not a promise. FitAI must reassess it using your actual weight trend.',
         'Nhận diện món ăn': 'Food recognition',
         'Tra cứu khẩu phần đã cân bằng dữ liệu thành phần thực phẩm USDA FoodData Central.': 'Look up measured portions using USDA FoodData Central composition data.',
+        'Quét sản phẩm đóng gói': 'Scan a packaged product',
+        'Quét mã UPC/EAN trên chai, lon hoặc bao bì để tìm sản phẩm thương hiệu trong USDA.': 'Scan the UPC/EAN on a bottle, can, or package to find a branded USDA product.',
+        'Khung hình quét mã vạch': 'Barcode scanning frame',
+        'Mở máy quét mã': 'Open barcode scanner',
+        'Dừng quét': 'Stop scanning',
+        'Mã UPC/EAN': 'UPC/EAN code',
+        'Tìm sản phẩm thương hiệu': 'Find branded product',
+        'Không phải mọi sản phẩm Việt Nam đều có trong USDA. Nếu không tìm thấy, hãy nhập tên sản phẩm hoặc đối chiếu nhãn dinh dưỡng.': 'Not every Vietnamese product is available in USDA. If no match is found, enter the product name or check its nutrition label.',
+        'Mã vạch phải có 8, 12, 13 hoặc 14 chữ số.': 'The barcode must contain 8, 12, 13, or 14 digits.',
+        'Đang tìm sản phẩm thương hiệu trong USDA...': 'Searching USDA branded products...',
+        'Không thể tra cứu mã vạch này.': 'Unable to look up this barcode.',
+        'Không tìm thấy mã này trong USDA. Hãy nhập tên sản phẩm hoặc kiểm tra nhãn dinh dưỡng.': 'This barcode was not found in USDA. Enter the product name or check its nutrition label.',
+        'Không thể đọc mã vạch. Hãy nhập dãy số bên dưới mã.': 'The barcode could not be read. Enter the digits printed below it.',
+        'Quét trực tiếp cần HTTPS hoặc localhost. Bạn vẫn có thể nhập mã bằng tay.': 'Live scanning requires HTTPS or localhost. You can still enter the code manually.',
+        'Trình duyệt này chưa hỗ trợ quét mã. Hãy nhập dãy số bên dưới mã vạch.': 'This browser does not support barcode scanning. Enter the digits printed below the barcode.',
+        'Đưa mã vạch vào giữa khung hình và giữ máy ổn định.': 'Center the barcode in the frame and hold the device steady.',
+        'Không mở được camera. Hãy cấp quyền camera hoặc nhập mã bằng tay.': 'The camera could not be opened. Allow camera access or enter the code manually.',
+        'Đã dừng quét mã.': 'Barcode scanning stopped.',
         'Chụp hoặc tải ảnh món ăn lên': 'Take or upload a meal photo',
         'Tải ảnh lên': 'Upload image',
         'Phân tích ảnh bằng AI': 'Analyze photo with AI',
@@ -103,6 +121,14 @@
         'Tra cứu dữ liệu USDA': 'Search USDA data',
         'Kết quả dinh dưỡng': 'Nutrition result',
         'Năng lượng:': 'Calories:',
+        'Chất đạm:': 'Protein:',
+        'Tinh bột:': 'Carbs:',
+        'Chất béo:': 'Fat:',
+        'Chất xơ:': 'Fiber:',
+        'Tôi đã kiểm tra nhãn sản phẩm và xác nhận chất xơ là 0 g.': 'I checked the product label and confirmed that fiber is 0 g.',
+        'Chỉ xác nhận khi nhãn thật sự ghi 0 g hoặc “not a significant source of dietary fiber”.': 'Confirm only when the label states 0 g or “not a significant source of dietary fiber”.',
+        'USDA không khai báo chất xơ cho sản phẩm này. Hãy kiểm tra nhãn và chỉ xác nhận 0 g nếu nhãn hỗ trợ điều đó.': 'USDA does not report fiber for this product. Check the label and confirm 0 g only when the label supports it.',
+        'Chất xơ 0 g do người dùng xác nhận từ nhãn sản phẩm.': 'Fiber 0 g was confirmed by the user from the product label.',
         'Chọn kết quả gần đúng nhất': 'Choose the closest match',
         'Chọn khẩu phần trên nhãn': 'Choose a label serving',
         'USDA cung cấp dữ liệu tham khảo cho thực phẩm phổ biến và thực phẩm đóng gói. Hãy chọn đúng bản ghi, cân khẩu phần và đối chiếu nhãn khi có.': 'USDA provides reference data for common and packaged foods. Choose the correct record, weigh the portion, and verify the label when available.',
@@ -585,6 +611,8 @@
         ,[/^Độ tin cậy của gợi ý: (\d+)%\.$/, 'Suggestion confidence: $1%.']
         ,[/^(.+) — độ tin cậy (\d+)%$/, '$1 — $2% confidence']
         ,[/^Tìm thấy (\d+) kết quả USDA\. Hãy chọn bản ghi và khẩu phần gần đúng nhất\.$/, 'Found $1 USDA results. Choose the closest record and portion.']
+        ,[/^Đã quét mã (\d+)\. Đang tra cứu sản phẩm\.\.\.$/, 'Scanned barcode $1. Looking up the product...']
+        ,[/^Đã tìm thấy (\d+) sản phẩm\. Hãy đối chiếu tên thương hiệu và khẩu phần trên nhãn\.$/, 'Found $1 product(s). Check the brand name and serving on the label.']
         ,[/^Đã thêm (.+) vào nhật ký\.$/, 'Added $1 to the diary.']
         ,[/^Không thể lưu bản ghi này vì USDA thiếu: (.+)\. Hãy chọn bản ghi khác có đủ dữ liệu\.$/, (_, nutrients) => `This record cannot be saved because USDA is missing: ${nutrients.split(', ').map((value) => translateText(value, 'en')).join(', ')}. Choose another record with complete data.`]
         ,[/^Bạn: (.+)$/, 'You: $1']

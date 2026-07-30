@@ -32,6 +32,7 @@ router.post(
   profileController.validateCalibrationTarget
 );
 router.get('/nutrition/search', standardApiRateLimit, nutritionController.search);
+router.get('/nutrition/barcode/:barcode', standardApiRateLimit, nutritionController.barcode);
 router.get('/nutrition/foods/:fdcId', standardApiRateLimit, nutritionController.details);
 router.post('/nutrition/chat', requireFirebaseUser, chatRateLimit, nutritionChatController.chat);
 router.post('/monitor/client-error', clientErrorRateLimit, reportClientError);

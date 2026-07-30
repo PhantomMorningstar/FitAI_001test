@@ -46,6 +46,21 @@ test('camera recognition requires an explicit accessible confirmation step', asy
   assert.match(camera, /id="confirm-food-candidate-btn"[^>]*>Xác nhận gợi ý này<\/button>/);
 });
 
+test('camera barcode scanner has labelled controls and a manual fallback', async () => {
+  const camera = await render('camera.ejs');
+  assert.match(camera, /id="barcode-video"[^>]+aria-label="Khung hình quét mã vạch"/);
+  assert.match(camera, /id="barcode-input"[^>]+inputmode="numeric"/);
+  assert.match(camera, /id="barcode-status"[^>]+role="status"/);
+  assert.match(camera, /id="lookup-barcode-btn"/);
+});
+
+test('branded foods can confirm a missing fiber value from the product label', async () => {
+  const camera = await render('camera.ejs');
+  assert.match(camera, /id="label-fiber-confirmation"[^>]+hidden/);
+  assert.match(camera, /id="confirm-label-fiber-zero"[^>]+type="checkbox"/);
+  assert.match(camera, /xác nhận chất xơ là 0 g/);
+});
+
 test('health safety screening is visible in the first onboarding step', async () => {
   const index = await render('index.ejs');
   const firstStep = index.match(/class="quiz-step active"[\s\S]*?class="quiz-step"/)?.[0] || '';

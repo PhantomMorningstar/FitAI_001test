@@ -4,7 +4,9 @@ const {
   fetchFoodDetails,
   normalizeFood,
   normalizePortions,
+  searchBrandedFoodByBarcode,
   searchFoods,
+  validateBarcode,
   validateFdcId,
   validateSearchInput
 } = require('../src/services/nutrition.service');
@@ -145,4 +147,36 @@ test('nutrition search reports USDA rate limiting clearly', async () => {
     }),
     (error) => error.statusCode === 429 && /giới hạn số lần/i.test(error.message)
   );
+});
+
+test('barcode validation accepts UPC and EAN formats only', () => {
+  assert.equal(validateBarcode('049000050103'), '049000050103');
+  assert.equal(validateBarcode(' 893 8505 972 091 '), '8938505972091');
+  assert.throws(() => validateBarcode('12345'), /8, 12, 13, or 14 digits/i);
+});
+
+test('barcode lookup searches branded foods and keeps only an exact GTIN match', async () => {
+  let requestBody;
+  const foods = await searchBrandedFoodByBarcode({
+    barcode: '049000050103',
+    grams: 250,
+    apiKey: 'private-key',
+    fetchImpl: async (_url, options) => {
+      requestBody = JSON.parse(options.body);
+      return {
+        ok: true,
+        json: async () => ({
+          foods: [
+            { ...sampleFood, dataType: 'Branded', gtinUpc: '049000050103', brandOwner: 'Example Brand' },
+            { ...sampleFood, fdcId: 456, dataType: 'Branded', gtinUpc: '111111111111' }
+          ]
+        })
+      };
+    }
+  });
+  assert.equal(requestBody.query, '049000050103');
+  assert.deepEqual(requestBody.dataType, ['Branded']);
+  assert.equal(foods.length, 1);
+  assert.equal(foods[0].brandName, 'Example Brand');
+  assert.equal(foods[0].grams, 250);
 });

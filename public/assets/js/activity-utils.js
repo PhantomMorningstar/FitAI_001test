@@ -14,21 +14,37 @@
             .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
     }
 
-    function summarizeActivity(entries, bmr) {
+    function emptySummary() {
+        return {
+            sampleDays: 0, averageSteps: null, activeMinutes: 0, guidelinePercent: 0,
+            observedActivity: null, activityFactor: null, adjustedTdee: null, confidence: 'insufficient'
+        };
+    }
+
+    function currentLocalDateKey() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function summarizeActivity(entries, bmr, endDateKey = currentLocalDateKey()) {
         const sorted = normalizeEntries(entries);
-        if (!sorted.length) {
-            return {
-                sampleDays: 0, averageSteps: null, activeMinutes: 0, guidelinePercent: 0,
-                observedActivity: null, activityFactor: null, adjustedTdee: null, confidence: 'insufficient'
-            };
-        }
-        const anchor = new Date(`${sorted[sorted.length - 1].dateKey}T12:00:00`);
+        if (!sorted.length) return emptySummary();
+
+        const safeEndDateKey = /^\d{4}-\d{2}-\d{2}$/.test(endDateKey)
+            ? endDateKey
+            : currentLocalDateKey();
+        const anchor = new Date(`${safeEndDateKey}T12:00:00`);
         const start = new Date(anchor);
         start.setDate(start.getDate() - 6);
         const windowEntries = sorted.filter((entry) => {
             const date = new Date(`${entry.dateKey}T12:00:00`);
             return date >= start && date <= anchor;
         });
+        if (!windowEntries.length) return emptySummary();
+
         const sampleDays = windowEntries.length;
         const averageSteps = Math.round(windowEntries.reduce((sum, entry) => sum + entry.steps, 0) / sampleDays);
         const activeMinutes = windowEntries.reduce((sum, entry) => sum + entry.activeMinutes, 0);

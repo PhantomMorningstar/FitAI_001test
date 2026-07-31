@@ -18,6 +18,22 @@ test('core navigation and health terms have English translations', () => {
   assert.equal(translateText('Tổng quan', 'vi'), 'Tổng quan');
 });
 
+test('overview and profile helper text switch completely between languages', () => {
+  const examples = [
+    ['Việc tiếp theo của bạn', 'Your next actions'],
+    ['FitAI đang chọn những việc quan trọng nhất cho hôm nay.', 'FitAI is selecting the most important actions for today.'],
+    ['BMR ước tính', 'Estimated BMR'],
+    ['TDEE ước tính', 'Estimated TDEE'],
+    ['Hãy ghi ít nhất 4 ngày trước khi so sánh vận động với hồ sơ.', 'Record at least 4 days before comparing observed activity with your profile.'],
+    ['Hãy ghi ít nhất 4 ngày để nhận nhận xét về khả năng phục hồi.', 'Record at least 4 days to receive recovery insights.']
+  ];
+
+  examples.forEach(([vietnamese, english]) => {
+    assert.equal(translateText(vietnamese, 'en'), english);
+    assert.equal(translateText(english, 'vi'), vietnamese);
+  });
+});
+
 test('translation preserves surrounding whitespace and unknown values', () => {
   assert.equal(translateText('  Đăng nhập\n', 'en'), '  Sign in\n');
   assert.equal(translateText('FitAI', 'en'), 'FitAI');

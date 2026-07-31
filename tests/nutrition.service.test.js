@@ -180,3 +180,53 @@ test('barcode lookup searches branded foods and keeps only an exact GTIN match',
   assert.equal(foods[0].brandName, 'Example Brand');
   assert.equal(foods[0].grams, 250);
 });
+
+test('barcode lookup retries without a leading zero when USDA stores the shortened UPC', async () => {
+  const queries = [];
+  const foods = await searchBrandedFoodByBarcode({
+    barcode: '049000050103',
+    grams: 100,
+    apiKey: 'private-key',
+    fetchImpl: async (_url, options) => {
+      const body = JSON.parse(options.body);
+      queries.push(body.query);
+      return {
+        ok: true,
+        json: async () => ({
+          foods: body.query === '49000050103'
+            ? [{ ...sampleFood, dataType: 'Branded', gtinUpc: '49000050103' }]
+            : []
+        })
+      };
+    }
+  });
+
+  assert.deepEqual(queries, ['049000050103', '49000050103']);
+  assert.equal(foods.length, 1);
+  assert.equal(foods[0].gtinUpc, '49000050103');
+});
+
+test('barcode lookup retries with GTIN-14 when USDA indexes a zero-padded UPC', async () => {
+  const queries = [];
+  const foods = await searchBrandedFoodByBarcode({
+    barcode: '049000050103',
+    grams: 100,
+    apiKey: 'private-key',
+    fetchImpl: async (_url, options) => {
+      const body = JSON.parse(options.body);
+      queries.push(body.query);
+      return {
+        ok: true,
+        json: async () => ({
+          foods: body.query === '00049000050103'
+            ? [{ ...sampleFood, dataType: 'Branded', gtinUpc: '00049000050103' }]
+            : []
+        })
+      };
+    }
+  });
+
+  assert.deepEqual(queries, ['049000050103', '49000050103', '00049000050103']);
+  assert.equal(foods.length, 1);
+  assert.equal(foods[0].gtinUpc, '00049000050103');
+});

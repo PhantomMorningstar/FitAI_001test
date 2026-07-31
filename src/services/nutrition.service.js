@@ -176,28 +176,43 @@ async function searchBrandedFoodByBarcode({ barcode, grams = 100, apiKey, fetchI
     error.statusCode = 422;
     throw error;
   }
-  const response = await fetchImpl(`${FDC_SEARCH_URL}?api_key=${encodeURIComponent(apiKey)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: validBarcode,
-      dataType: ['Branded'],
-      pageSize: 10
-    }),
-    signal: AbortSignal.timeout(8000)
-  });
-  if (!response.ok) {
-    const error = new Error(response.status === 429
-      ? 'USDA is temporarily rate limiting barcode searches. Please try again later.'
-      : 'The branded-food database is temporarily unavailable. Enter the product name instead.');
-    error.statusCode = response.status === 429 ? 429 : 502;
-    throw error;
-  }
-  const payload = await response.json();
   const expected = comparableBarcode(validBarcode);
-  return (payload.foods || [])
-    .filter((food) => comparableBarcode(food.gtinUpc) === expected)
-    .map((food) => normalizeFood(food, input.grams));
+  // FoodData Central may index the same product as UPC-A, without a leading
+  // zero, or as a zero-padded GTIN-14. Search every equivalent form, but still
+  // require an exact normalized GTIN match before returning a product.
+  const gtin14 = validBarcode.padStart(14, '0');
+  const queries = [...new Set([validBarcode, expected, gtin14].filter(Boolean))];
+  const matches = new Map();
+
+  for (const query of queries) {
+    const response = await fetchImpl(`${FDC_SEARCH_URL}?api_key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query,
+        dataType: ['Branded'],
+        pageSize: 25
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!response.ok) {
+      const error = new Error(response.status === 429
+        ? 'USDA is temporarily rate limiting barcode searches. Please try again later.'
+        : 'The branded-food database is temporarily unavailable. Enter the product name instead.');
+      error.statusCode = response.status === 429 ? 429 : 502;
+      throw error;
+    }
+
+    const payload = await response.json();
+    for (const food of payload.foods || []) {
+      if (comparableBarcode(food.gtinUpc) === expected) {
+        matches.set(food.fdcId, food);
+      }
+    }
+    if (matches.size > 0) break;
+  }
+
+  return [...matches.values()].map((food) => normalizeFood(food, input.grams));
 }
 
 module.exports = {

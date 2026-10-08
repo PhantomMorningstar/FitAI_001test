@@ -125,14 +125,38 @@ function extractOutputText(payload) {
 
 function validateAiResult(result) {
   if (!result || typeof result !== 'object' || typeof result.answer !== 'string') throw new Error('invalid');
+  const answer = cleanText(result.answer, 1800);
+  if (!answer) throw new Error('invalid');
   return {
-    answer: cleanText(result.answer, 1800),
+    answer,
     suggestions: Array.isArray(result.suggestions)
       ? result.suggestions.map((item) => cleanText(item, 240)).filter(Boolean).slice(0, 4)
       : [],
     caution: cleanText(result.caution, 600),
     needsProfessionalHelp: Boolean(result.needsProfessionalHelp)
   };
+}
+
+function parseAiResult(outputText) {
+  const text = cleanText(outputText, 12000);
+  const candidates = [text];
+  const fencedJson = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)?.[1];
+  if (fencedJson) candidates.push(fencedJson);
+
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    candidates.push(text.slice(firstBrace, lastBrace + 1));
+  }
+
+  for (const candidate of new Set(candidates)) {
+    try {
+      return validateAiResult(JSON.parse(candidate));
+    } catch {
+      // Try the next supported Gemini response wrapper.
+    }
+  }
+  throw new Error('invalid');
 }
 
 async function chatNutrition({ input, apiKey, model, fetchImpl = fetch }) {
@@ -183,36 +207,51 @@ async function chatNutrition({ input, apiKey, model, fetchImpl = fetch }) {
     }
   ];
 
-  const response = await fetchImpl(`${GEMINI_API_ROOT}/${encodeURIComponent(model)}:generateContent`, {
-    method: 'POST',
-    headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemInstruction }] },
-      contents,
-      generationConfig: {
-        temperature: 0.25,
-        maxOutputTokens: 1600,
-        responseMimeType: 'application/json',
-        responseJsonSchema: schema
-      }
-    }),
-    signal: AbortSignal.timeout(30000)
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(response.status === 429
-      ? 'Trợ lý AI đang đạt giới hạn yêu cầu. Vui lòng thử lại sau.'
-      : (payload.error?.message || 'Trợ lý dinh dưỡng AI tạm thời không khả dụng.'));
-    error.statusCode = response.status === 429 ? 429 : 502;
-    throw error;
-  }
-  const outputText = extractOutputText(payload);
+  const requestStructuredAnswer = async (isRetry = false) => {
+    const response = await fetchImpl(`${GEMINI_API_ROOT}/${encodeURIComponent(model)}:generateContent`, {
+      method: 'POST',
+      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{
+            text: isRetry
+              ? `${systemInstruction} Return exactly one complete JSON object with no Markdown fences or surrounding text.`
+              : systemInstruction
+          }]
+        },
+        contents,
+        generationConfig: {
+          temperature: isRetry ? 0 : 0.25,
+          maxOutputTokens: 1600,
+          responseMimeType: 'application/json',
+          responseJsonSchema: schema
+        }
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(response.status === 429
+        ? 'Trợ lý AI đang đạt giới hạn yêu cầu. Vui lòng thử lại sau.'
+        : (payload.error?.message || 'Trợ lý dinh dưỡng AI tạm thời không khả dụng.'));
+      error.statusCode = response.status === 429 ? 429 : 502;
+      throw error;
+    }
+    return extractOutputText(payload);
+  };
+
+  const firstOutput = await requestStructuredAnswer();
   try {
-    return validateAiResult(JSON.parse(outputText));
+    return parseAiResult(firstOutput);
   } catch {
-    const error = new Error('AI trả về câu trả lời không hợp lệ. Vui lòng thử lại.');
-    error.statusCode = 502;
-    throw error;
+    const retryOutput = await requestStructuredAnswer(true);
+    try {
+      return parseAiResult(retryOutput);
+    } catch {
+      const error = new Error('AI trả về câu trả lời không hợp lệ. Vui lòng thử lại.');
+      error.statusCode = 502;
+      throw error;
+    }
   }
 }
 
@@ -221,6 +260,7 @@ module.exports = {
   detectHighRiskRequest,
   extractOutputText,
   highRiskResponse,
+  parseAiResult,
   sanitizeContext,
   validateChatInput
 };

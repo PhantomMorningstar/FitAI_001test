@@ -23,6 +23,7 @@
                     <p id="profile-reset-status" class="auth-feedback" role="status" aria-live="polite" hidden></p>
                     <p class="subtitle">Chưa có tài khoản? Chọn “Tạo tài khoản”. Đã đăng ký? Chọn “Đăng nhập”.</p>
                 </section>
+                <p id="account-data-status" class="auth-feedback" role="status" aria-live="polite" hidden></p>
 
                 <div id="authenticated-profile-container" style="display:none; flex-direction:column; gap:20px;">
                     <section id="settings-panel" class="section-card" style="display:none; border-style:dashed; border-color:var(--primary-color);">
@@ -33,6 +34,21 @@
                         <p id="account-verification-status" class="subtitle"></p>
                         <button type="button" class="btn btn-secondary" id="resend-verification-btn" hidden>Gửi lại email xác minh</button>
                         <p id="verification-action-status" class="auth-feedback" role="status" aria-live="polite" hidden></p>
+                    </section>
+
+                    <section class="section-card" id="account-data-section">
+                        <h3><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Dữ liệu và quyền riêng tư</h3>
+                        <p class="subtitle">Tải bản sao JSON gồm hồ sơ, nhật ký thực phẩm, cân nặng, vận động, giấc ngủ và trạng thái nhật ký. Bản sao chỉ được tạo khi bạn yêu cầu và tải trực tiếp xuống thiết bị này.</p>
+                        <button type="button" class="btn btn-secondary" id="export-account-data-btn">Tải dữ liệu của tôi</button>
+                        <div style="margin-top:20px; padding:16px; border:1px solid #d98a8a; border-radius:12px;">
+                            <h4>Xóa tài khoản và dữ liệu</h4>
+                            <p class="subtitle">Thao tác này xóa vĩnh viễn hồ sơ FitAI và các bản ghi sức khỏe gắn với tài khoản. Nhập mật khẩu để xác thực lại. Không thể hoàn tác.</p>
+                            <div class="input-field">
+                                <label for="delete-account-password">Mật khẩu hiện tại</label>
+                                <input type="password" id="delete-account-password" autocomplete="current-password">
+                            </div>
+                            <button type="button" class="btn" id="delete-account-btn" style="background:#b83030; color:#fff;">Xóa tài khoản vĩnh viễn</button>
+                        </div>
                     </section>
 
                     <section class="section-card">

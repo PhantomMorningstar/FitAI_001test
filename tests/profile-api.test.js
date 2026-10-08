@@ -83,6 +83,18 @@ test('API returns warnings without blocking a large but otherwise valid goal', a
   assert.ok(body.safety.warnings.some(({ code }) => code === 'LARGE_INITIAL_GOAL'));
 });
 
+test('API blocks care-sensitive plans and does not return automated targets', async () => {
+  const response = await postProfile(validProfile({
+    healthContext: { pregnant: true }
+  }));
+  const body = await response.json();
+  assert.equal(response.status, 422);
+  assert.equal(body.safety.allowed, false);
+  assert.equal(body.plan, null);
+  assert.equal(body.macros, null);
+  assert.ok(body.safety.blockers.some(({ code }) => code === 'HEALTH_CONTEXT_PREGNANT'));
+});
+
 test('API runs calibration calorie proposals through the safety engine', async () => {
   const safeResponse = await postCalibrationTarget(validProfile(), 1550);
   const safeBody = await safeResponse.json();

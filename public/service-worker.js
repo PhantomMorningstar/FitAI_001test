@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'fitai-shell-v54';
+const CACHE_VERSION = 'fitai-shell-v59';
 const APP_SHELL = [
   '/',
   '/roadmap',
@@ -9,7 +9,7 @@ const APP_SHELL = [
   '/manifest.webmanifest',
   '/assets/css/main.css',
   '/assets/icons/fitai-icon.svg',
-  '/assets/js/i18n.js?v=54',
+  '/assets/js/i18n.js?v=58',
   '/assets/js/date-utils.js',
   '/assets/js/dietary-utils.js?v=54',
   '/assets/js/daily-focus-utils.js',
@@ -23,7 +23,8 @@ const APP_SHELL = [
   '/assets/js/roadmap-utils.js',
   '/assets/js/plan-calibration-utils.js',
   '/assets/js/food-entry-utils.js',
-  '/assets/js/app.js?v=54'
+  '/assets/js/account-data-utils.js',
+  '/assets/js/app.js?v=56'
 ];
 
 self.addEventListener('install', (event) => {

@@ -67,3 +67,22 @@ test('accepts vegan as a supported dietary preference', () => {
   assert.equal(result.valid, true);
   assert.equal(result.data.dietaryPreference, 'vegan');
 });
+
+test('rejects malformed health screening values instead of treating them as negative answers', () => {
+  for (const healthContext of [
+    { pregnant: 'true' },
+    ['pregnant'],
+    'pregnant',
+    { unknownFlag: true }
+  ]) {
+    const result = validateProfile({ ...validProfile, healthContext }, { today });
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.healthContext);
+  }
+});
+
+test('rejects allergy values that are not a list', () => {
+  const result = validateProfile({ ...validProfile, allergies: 'peanuts' }, { today });
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.allergies);
+});

@@ -41,7 +41,8 @@ test('profile data visualizations have text alternatives', async () => {
 
 test('camera recognition requires an explicit accessible confirmation step', async () => {
   const camera = await render('camera.ejs');
-  assert.match(camera, /id="food-upload"[^>]+capture="environment"/);
+  assert.match(camera, /id="food-camera-capture"[^>]+capture="environment"/);
+  assert.match(camera, /id="food-upload"[^>]+accept="image\/jpeg,image\/png,image\/webp,image\/gif"/);
   assert.match(camera, /id="vision-confidence"[^>]+role="status"/);
   assert.match(camera, /id="confirm-food-candidate-btn"[^>]*>Xác nhận gợi ý này<\/button>/);
 });

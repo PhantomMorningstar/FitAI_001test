@@ -3,6 +3,12 @@ const ALLOWED_ACTIVITIES = new Set(['sedentary', 'lightly', 'moderately']);
 const ALLOWED_GOALS = new Set(['lose', 'maintain', 'gain']);
 const ALLOWED_ALLERGIES = new Set(['seafood', 'peanuts', 'milk', 'eggs', 'gluten', 'soy']);
 const ALLOWED_DIETARY_PREFERENCES = new Set(['omnivore', 'vegetarian', 'vegan']);
+const ALLOWED_HEALTH_CONTEXT_FLAGS = new Set([
+  'pregnant',
+  'breastfeeding',
+  'eatingDisorderHistory',
+  'clinicianSupervised'
+]);
 
 const toFiniteNumber = (value) => {
   if (value === '' || value === null || value === undefined) return null;
@@ -64,6 +70,11 @@ const validateProfile = (input, options = {}) => {
     }
   }
 
+  if (profile.allergies !== undefined
+    && profile.allergies !== null
+    && !Array.isArray(profile.allergies)) {
+    errors.allergies = 'Dị ứng phải được cung cấp dưới dạng danh sách lựa chọn.';
+  }
   const allergies = Array.isArray(profile.allergies) ? profile.allergies : [];
   if (allergies.some((allergy) => !ALLOWED_ALLERGIES.has(allergy))) {
     errors.allergies = 'Một hoặc nhiều lựa chọn dị ứng không hợp lệ.';
@@ -72,11 +83,21 @@ const validateProfile = (input, options = {}) => {
   if (!ALLOWED_DIETARY_PREFERENCES.has(dietaryPreference)) {
     errors.dietaryPreference = 'Lựa chọn chế độ ăn không hợp lệ.';
   }
+  const healthContextInput = profile.healthContext;
+  if (healthContextInput !== undefined
+    && (!healthContextInput
+      || typeof healthContextInput !== 'object'
+      || Array.isArray(healthContextInput)
+      || Object.entries(healthContextInput).some(([key, value]) => (
+        !ALLOWED_HEALTH_CONTEXT_FLAGS.has(key) || typeof value !== 'boolean'
+      )))) {
+    errors.healthContext = 'Thông tin sàng lọc an toàn không hợp lệ. Hãy kiểm tra lại các lựa chọn.';
+  }
   const healthContext = {
-    pregnant: profile.healthContext?.pregnant === true,
-    breastfeeding: profile.healthContext?.breastfeeding === true,
-    eatingDisorderHistory: profile.healthContext?.eatingDisorderHistory === true,
-    clinicianSupervised: profile.healthContext?.clinicianSupervised === true
+    pregnant: healthContextInput?.pregnant === true,
+    breastfeeding: healthContextInput?.breastfeeding === true,
+    eatingDisorderHistory: healthContextInput?.eatingDisorderHistory === true,
+    clinicianSupervised: healthContextInput?.clinicianSupervised === true
   };
 
   return {

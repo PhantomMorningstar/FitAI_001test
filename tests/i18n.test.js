@@ -1,5 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ejs = require('ejs');
 const { normalizeLanguage, STORAGE_KEY, translateText, VI_TO_EN } = require('../public/assets/js/i18n');
 const { MEAL_CATALOG } = require('../src/services/meal-suggestion.service');
 
@@ -16,6 +19,20 @@ test('core navigation and health terms have English translations', () => {
   assert.equal(translateText('Chất đạm', 'en'), 'Protein');
   assert.equal(translateText('Cân nặng', 'en'), 'Weight');
   assert.equal(translateText('Tổng quan', 'vi'), 'Tổng quan');
+});
+
+test('account privacy controls and status messages translate into English', () => {
+  const examples = [
+    ['Dữ liệu và quyền riêng tư', 'Data and privacy'],
+    ['Tải dữ liệu của tôi', 'Download my data'],
+    ['Xóa tài khoản và dữ liệu', 'Delete account and data'],
+    ['Mật khẩu hiện tại', 'Current password'],
+    ['Tài khoản và dữ liệu đã được xóa.', 'Your account and data have been deleted.']
+  ];
+
+  examples.forEach(([vietnamese, english]) => {
+    assert.equal(translateText(vietnamese, 'en'), english);
+  });
 });
 
 test('overview and profile helper text switch completely between languages', () => {
@@ -46,6 +63,49 @@ test('English source strings are localized back to Vietnamese', () => {
     translateText('No food items were logged for this date.', 'vi'),
     'Không có món ăn nào được ghi cho ngày này.'
   );
+  assert.equal(translateText('Not Found | FitAI', 'vi'), 'Không tìm thấy | FitAI');
+  assert.equal(translateText('Back to overview', 'vi'), 'Quay về tổng quan');
+  assert.equal(translateText('Switch to Vietnamese', 'vi'), 'Chuyển sang tiếng Việt');
+  assert.equal(
+    translateText('Thông tin sàng lọc an toàn không hợp lệ. Hãy kiểm tra lại các lựa chọn.', 'en'),
+    'The safety screening information is invalid. Please check your selections.'
+  );
+});
+
+test('all static Vietnamese text and accessibility labels on pages have English translations', async () => {
+  const pagesDirectory = path.join(__dirname, '..', 'views', 'pages');
+  const pageNames = fs.readdirSync(pagesDirectory).filter((name) => name.endsWith('.ejs'));
+  const missing = new Set();
+
+  for (const pageName of pageNames) {
+    const html = await ejs.renderFile(path.join(pagesDirectory, pageName), {
+      title: 'Not found',
+      statusCode: 404,
+      message: 'Missing'
+    });
+    const visibleHtml = html
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+    const text = visibleHtml.replace(/<[^>]+>/g, '\n');
+    const attributes = [...visibleHtml.matchAll(/\b(?:aria-label|alt|placeholder|title)="([^"]*)"/g)]
+      .map((match) => match[1]);
+    const candidates = [...text.split(/\s*\n\s*/), ...attributes]
+      .map((value) => value.trim())
+      .filter((value) => /[\u00C0-\u1EF9\u0110\u0111]/u.test(value));
+
+    candidates.forEach((value) => {
+      if (translateText(value, 'en') === value) missing.add(`${pageName}: ${value}`);
+    });
+  }
+
+  assert.deepEqual([...missing], []);
+});
+
+test('language toggle accessible labels and titles match the selected language', () => {
+  assert.equal(translateText('Chuyển sang tiếng Anh', 'en'), 'Switch to English');
+  assert.equal(translateText('Switch to Vietnamese', 'vi'), 'Chuyển sang tiếng Việt');
+  assert.equal(translateText('Tiếng Anh', 'en'), 'English');
+  assert.equal(translateText('Vietnamese', 'vi'), 'Tiếng Việt');
 });
 
 test('dietary preference labels translate reliably in both directions', () => {
@@ -174,6 +234,10 @@ test('dynamic nutrition labels and label-confirmed fiber are translated', () => 
 });
 
 test('Firebase-protected AI errors are available in both languages', () => {
+  assert.equal(
+    translateText('AI trả về câu trả lời không hợp lệ. Vui lòng thử lại.', 'en'),
+    'AI returned an invalid response. Please try again.'
+  );
   assert.equal(
     translateText('Hãy đăng nhập để sử dụng tính năng AI.', 'en'),
     'Sign in to use AI features.'

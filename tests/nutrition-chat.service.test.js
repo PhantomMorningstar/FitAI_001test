@@ -4,9 +4,45 @@ const {
   chatNutrition,
   detectHighRiskRequest,
   highRiskResponse,
+  parseAiResult,
   sanitizeContext,
   validateChatInput
 } = require('../src/services/nutrition-chat.service');
+
+test('AI result parser accepts JSON wrapped in a Markdown code fence', () => {
+  const result = parseAiResult('```json\n{"answer":"Use your verified target.","suggestions":[],"caution":"","needsProfessionalHelp":false}\n```');
+  assert.equal(result.answer, 'Use your verified target.');
+});
+
+test('AI result parser accepts a JSON object surrounded by explanatory text', () => {
+  const result = parseAiResult('Result:\n{"answer":"Keep tracking.","suggestions":[],"caution":"","needsProfessionalHelp":false}\nDone.');
+  assert.equal(result.answer, 'Keep tracking.');
+});
+
+test('chat retries once with deterministic output when Gemini returns malformed JSON', async () => {
+  let calls = 0;
+  const result = await chatNutrition({
+    input: { message: 'How many calories remain?', context: { language: 'en' } },
+    apiKey: 'server-secret',
+    model: 'gemini-test',
+    fetchImpl: async (_url, options) => {
+      calls += 1;
+      const body = JSON.parse(options.body);
+      if (calls === 1) {
+        assert.equal(body.generationConfig.temperature, 0.25);
+        return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{broken' }] } }] }) };
+      }
+      assert.equal(body.generationConfig.temperature, 0);
+      assert.match(body.systemInstruction.parts[0].text, /exactly one complete JSON object/i);
+      return {
+        ok: true,
+        json: async () => ({ candidates: [{ content: { parts: [{ text: '{"answer":"Use the remaining target shown by FitAI.","suggestions":[],"caution":"","needsProfessionalHelp":false}' }] } }] })
+      };
+    }
+  });
+  assert.equal(calls, 2);
+  assert.equal(result.answer, 'Use the remaining target shown by FitAI.');
+});
 
 test('chat input limits history and rejects empty questions', () => {
   assert.throws(() => validateChatInput({ message: ' ' }), (error) => error.statusCode === 422);

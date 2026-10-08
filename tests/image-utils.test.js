@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   calculateContainSize,
+  MAX_PREPARED_BYTES,
   MAX_SOURCE_BYTES,
   validateImageFile
 } = require('../public/assets/js/image-utils');
@@ -15,4 +16,8 @@ test('image upload validates MIME type and a practical source-size limit', () =>
   assert.equal(validateImageFile({ type: 'image/jpeg', size: 5_000_000 }).valid, true);
   assert.equal(validateImageFile({ type: 'text/html', size: 100 }).valid, false);
   assert.equal(validateImageFile({ type: 'image/png', size: MAX_SOURCE_BYTES + 1 }).valid, false);
+});
+
+test('prepared image payload stays below the recognition API limit', () => {
+  assert.ok(MAX_PREPARED_BYTES < 5 * 1024 * 1024);
 });

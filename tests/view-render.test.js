@@ -29,6 +29,7 @@ test('application pages render the shared shell exactly once', async () => {
     assert.equal((html.match(/src="\/assets\/js\/motion\.js"/g) || []).length, 1, `${fileName} motion client`);
     assert.equal((html.match(/src="\/assets\/js\/i18n\.js\?v=\d+"/g) || []).length, 1, `${fileName} i18n`);
     assert.equal((html.match(/src="\/assets\/js\/app\.js\?v=\d+"/g) || []).length, 1, `${fileName} app script`);
+    assert.equal((html.match(/src="\/assets\/js\/account-data-utils\.js"/g) || []).length, 1, `${fileName} account data utils`);
     assert.equal((html.match(/id="language-toggle"/g) || []).length, 1, `${fileName} language toggle`);
     assert.equal((html.match(/id="install-app-btn"/g) || []).length, 1, `${fileName} install button`);
     assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
@@ -49,6 +50,23 @@ test('page-specific scripts remain attached to their pages', async () => {
   assert.match(profile, /TDEE tham khảo từ vận động/);
   assert.match(profile, /không tự động thay đổi mục tiêu calorie hoặc kế hoạch/);
   assert.doesNotMatch(profile, />TDEE quan sát</);
+});
+
+test('Firebase web config is injected safely before application scripts', async () => {
+  const html = await render('profile.ejs', {
+    firebaseWebConfig: {
+      apiKey: 'web-api-key',
+      projectId: 'fitai-test',
+      authDomain: '</script><script>alert(1)</script>'
+    }
+  });
+  const configIndex = html.indexOf('window.FitAIWebConfig =');
+  const appScriptIndex = html.indexOf('/assets/js/app.js?v=');
+
+  assert.ok(configIndex !== -1 && appScriptIndex > configIndex);
+  assert.match(html, /"apiKey":"web-api-key"/);
+  assert.match(html, /\\u003c\/script>/);
+  assert.doesNotMatch(html, /<\/script><script>alert\(1\)<\/script>/);
 });
 
 test('error page uses the shared head without loading application SDKs', async () => {

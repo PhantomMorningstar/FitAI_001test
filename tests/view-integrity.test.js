@@ -28,3 +28,15 @@ test('onboarding display mode preserves centered grid layout', () => {
   assert.match(appScript, /onboardingScreen\.style\.display = 'grid'/);
   assert.doesNotMatch(appScript, /onboardingScreen\.style\.display = 'flex'/);
 });
+
+test('camera workspace uses the full centered width until analysis is visible', () => {
+  const cameraPage = fs.readFileSync(path.join(pagesDirectory, 'camera.ejs'), 'utf8');
+  const appScript = fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'js', 'app.js'), 'utf8');
+  const stylesheet = fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'css', 'main.css'), 'utf8');
+
+  assert.match(cameraPage, /class="section-card grid-2-columns camera-workspace"/);
+  assert.match(stylesheet, /\.camera-workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0, 680px\)/s);
+  assert.match(stylesheet, /\.camera-workspace\.has-analysis\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s);
+  assert.match(appScript, /cameraWorkspace\?\.classList\.add\('has-analysis'\)/);
+  assert.match(appScript, /cameraWorkspace\?\.classList\.remove\('has-analysis'\)/);
+});

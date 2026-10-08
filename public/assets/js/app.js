@@ -1,7 +1,7 @@
 // ==========================================
 // 🔥 FIREBASE PROJECT CONFIGURATION
 // ==========================================
-const firebaseConfig = {
+const firebaseConfig = window.FitAIWebConfig?.apiKey ? window.FitAIWebConfig : {
     apiKey: "AIzaSyCZW8xPv4znydLYpRkqwhhv5RBtsW-gVug",
     authDomain: "fitai-test1-2c5b8.firebaseapp.com",
     projectId: "fitai-test1-2c5b8",
@@ -37,11 +37,22 @@ async function firebaseAuthenticatedFetch(url, options = {}) {
 async function createOrUpgradeAccount(email, password) {
     const credential = firebase.auth.EmailAuthProvider.credential(email, password);
     const currentUser = auth.currentUser;
+    if (currentUser && !currentUser.isAnonymous) {
+        const error = new Error('Hãy đăng xuất trước khi tạo tài khoản khác.');
+        error.code = 'auth/account-already-signed-in';
+        throw error;
+    }
+    const guestDraft = loadOnboardingDraft(currentUser);
+    const guestOnboardingCompleted = hasOnboardingCompleted(currentUser);
     if (currentUser?.isAnonymous) {
         const result = await currentUser.linkWithCredential(credential);
+        if (guestDraft) saveOnboardingDraft(guestDraft, result.user);
+        setOnboardingCompleted(guestOnboardingCompleted, result.user);
         return result.user;
     }
     const result = await auth.createUserWithEmailAndPassword(email, password);
+    if (guestDraft) saveOnboardingDraft(guestDraft, result.user);
+    setOnboardingCompleted(guestOnboardingCompleted, result.user);
     return result.user;
 }
 
@@ -53,6 +64,7 @@ function getAuthErrorMessage(error) {
     const messages = {
         'auth/email-already-in-use': 'Email này đã có tài khoản. Hãy chọn Đăng nhập hoặc Quên mật khẩu.',
         'auth/invalid-credential': 'Email hoặc mật khẩu không đúng.',
+        'auth/wrong-password': 'Mật khẩu không đúng. Vui lòng thử lại.',
         'auth/invalid-email': 'Địa chỉ email không hợp lệ.',
         'auth/operation-not-allowed': 'Đăng nhập bằng email chưa được bật trong Firebase.',
         'auth/too-many-requests': 'Bạn thử quá nhiều lần. Hãy chờ một lúc rồi thử lại.',
@@ -60,7 +72,8 @@ function getAuthErrorMessage(error) {
         'auth/weak-password': 'Mật khẩu cần có ít nhất 6 ký tự.',
         'auth/network-request-failed': 'Không thể kết nối Firebase. Hãy kiểm tra Internet.',
         'auth/admin-restricted-operation': 'Phương thức đăng nhập này đang bị tắt trong Firebase.',
-        'auth/sign-in-required': 'Hãy đăng nhập để lưu và đồng bộ dữ liệu này.'
+        'auth/sign-in-required': 'Hãy đăng nhập để lưu và đồng bộ dữ liệu này.',
+        'auth/account-already-signed-in': 'Bạn đã đăng nhập. Hãy đăng xuất trước khi tạo tài khoản khác.'
     };
     return messages[error?.code] || 'Không thể hoàn tất thao tác tài khoản. Vui lòng thử lại.';
 }
@@ -1792,9 +1805,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Food image recognition controls
     const foodUploadInput = getEl('food-upload');
     const uploadImageBtn = getEl('upload-image-btn');
+    const captureImageBtn = getEl('capture-image-btn');
+    const foodCameraCaptureInput = getEl('food-camera-capture');
     const recognizeFoodBtn = getEl('recognize-food-btn');
     const foodPreview = getEl('food-preview');
     const analysisResult = getEl('analysis-result');
+    const cameraWorkspace = analysisResult?.closest('.camera-workspace');
     const analysisFoodName = getEl('analysis-food-name');
     const analysisCalories = getEl('analysis-calories');
     const analysisProtein = getEl('analysis-protein');
@@ -1814,6 +1830,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const analysisSource = getEl('analysis-source');
     const analyzePhotoBtn = getEl('analyze-photo-btn');
     const visionStatus = getEl('vision-status');
+    const visionSigninLink = getEl('vision-signin-link');
     const visionFoodCandidates = getEl('vision-food-candidates');
     const visionCandidatesLabel = getEl('vision-candidates-label');
     const visionConfidence = getEl('vision-confidence');
@@ -1826,6 +1843,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const lookupBarcodeBtn = getEl('lookup-barcode-btn');
     let foodSearchResults = [];
     let selectedFoodImageDataUrl = '';
+    let imageSelectionGeneration = 0;
+    let visionRequestController = null;
+    let foodLookupGeneration = 0;
     let labelFiberBaseAnalysis = null;
     let barcodeStream = null;
     let barcodeScanFrame = null;
@@ -1848,14 +1868,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (confirmLabelFiberZero) confirmLabelFiberZero.checked = false;
         if (labelFiberConfirmation) labelFiberConfirmation.hidden = true;
         if (addFoodBtn) addFoodBtn.disabled = true;
-        if (recognizeFoodBtn) recognizeFoodBtn.disabled = false;
+        if (recognizeFoodBtn) recognizeFoodBtn.disabled = (foodSearchQuery?.value.trim().length || 0) < 2;
         if (analysisResult) analysisResult.style.display = 'none';
-        if (foodPortionSelect) foodPortionSelect.style.display = 'none';
-        if (foodPortionLabel) foodPortionLabel.style.display = 'none';
-        if (visionFoodCandidates) visionFoodCandidates.style.display = 'none';
-        if (visionCandidatesLabel) visionCandidatesLabel.style.display = 'none';
+        cameraWorkspace?.classList.remove('has-analysis');
+        if (foodPortionSelect) foodPortionSelect.hidden = true;
+        if (foodPortionLabel) foodPortionLabel.hidden = true;
+        if (visionFoodCandidates) visionFoodCandidates.hidden = true;
+        if (visionCandidatesLabel) visionCandidatesLabel.hidden = true;
         if (visionConfidence) visionConfidence.hidden = true;
-        if (confirmFoodCandidateBtn) confirmFoodCandidateBtn.style.display = 'none';
+        if (confirmFoodCandidateBtn) confirmFoodCandidateBtn.hidden = true;
     }
 
     if (continueToAppBtn) {
@@ -1895,6 +1916,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isRegistered = Boolean(user && !user.isAnonymous);
         const authBox = document.getElementById('auth-container');
         const profileBox = document.getElementById('authenticated-profile-container');
+        const settingsPanel = document.getElementById('settings-panel');
         const settingsBtn = document.getElementById('settings-toggle-btn');
         const profilePage = document.getElementById('profile-page');
         const profileLogoutBtn = document.getElementById('btn-logout');
@@ -1903,6 +1925,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (authBox) authBox.style.display = isRegistered ? 'none' : 'block';
         if (profileBox) profileBox.style.display = isRegistered ? 'flex' : 'none';
+        if (settingsPanel) settingsPanel.style.display = isRegistered && profilePage ? 'block' : 'none';
         if (profileLogoutBtn) profileLogoutBtn.disabled = !isRegistered;
         if (verificationStatus) {
             verificationStatus.textContent = isRegistered
@@ -1998,10 +2021,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (foodUploadInput) {
-        foodUploadInput.addEventListener('click', () => {
-            foodUploadInput.value = '';
-            selectedFoodImageDataUrl = '';
+    if (captureImageBtn && foodCameraCaptureInput) {
+        captureImageBtn.addEventListener('click', () => {
+            foodCameraCaptureInput.value = '';
+            foodCameraCaptureInput.click();
         });
     }
 
@@ -2047,6 +2070,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (labelFiberConfirmation) labelFiberConfirmation.hidden = !canConfirmFiberFromLabel;
         if (addFoodBtn) addFoodBtn.disabled = missingNutrients.length > 0;
         if (analysisResult) analysisResult.style.display = 'flex';
+        cameraWorkspace?.classList.add('has-analysis');
     }
 
     confirmLabelFiberZero?.addEventListener('change', () => {
@@ -2076,38 +2100,56 @@ document.addEventListener("DOMContentLoaded", () => {
         if (addFoodBtn) addFoodBtn.disabled = true;
     });
 
-    if (foodUploadInput) {
-        foodUploadInput.addEventListener('change', async () => {
-            const file = foodUploadInput.files[0];
-            if (!file) {
-                resetFoodAnalysis();
-                return;
+    async function prepareSelectedFoodImage(input) {
+        const file = input?.files?.[0];
+        if (!file) return;
+        const selectionId = ++imageSelectionGeneration;
+        visionRequestController?.abort();
+        visionRequestController = null;
+        selectedFoodImageDataUrl = '';
+        foodLookupGeneration += 1;
+        foodSearchResults = [];
+        resetFoodAnalysis();
+        if (foodPreview) {
+            foodPreview.hidden = true;
+            foodPreview.removeAttribute('src');
+        }
+        if (visionStatus) visionStatus.textContent = 'Đang tối ưu ảnh để phân tích...';
+        if (visionSigninLink) visionSigninLink.hidden = true;
+        if (analyzePhotoBtn) analyzePhotoBtn.disabled = true;
+        try {
+            const imageDataUrl = await FitAIImageUtils.prepareImageFile(file);
+            if (selectionId !== imageSelectionGeneration) return;
+            selectedFoodImageDataUrl = imageDataUrl;
+            if (foodPreview) {
+                foodPreview.src = imageDataUrl;
+                foodPreview.hidden = false;
             }
-            resetFoodAnalysis();
-            if (visionStatus) visionStatus.textContent = 'Đang tối ưu ảnh để phân tích...';
+            if (analyzePhotoBtn) analyzePhotoBtn.disabled = false;
+            if (visionStatus) visionStatus.textContent = 'Ảnh đã sẵn sàng. Hãy nhận diện để lấy gợi ý tên món.';
+        } catch (error) {
+            if (selectionId !== imageSelectionGeneration) return;
+            selectedFoodImageDataUrl = '';
+            if (foodPreview) {
+                foodPreview.hidden = true;
+                foodPreview.removeAttribute('src');
+            }
             if (analyzePhotoBtn) analyzePhotoBtn.disabled = true;
-            try {
-                selectedFoodImageDataUrl = await FitAIImageUtils.prepareImageFile(file);
-                if (foodPreview) {
-                    foodPreview.src = selectedFoodImageDataUrl;
-                    foodPreview.style.display = 'block';
-                }
-                if (analyzePhotoBtn) analyzePhotoBtn.disabled = false;
-                if (visionStatus) visionStatus.textContent = 'Ảnh đã sẵn sàng. Nhấn “Phân tích ảnh bằng AI” để nhận gợi ý.';
-            } catch (error) {
-                selectedFoodImageDataUrl = '';
-                if (foodPreview) foodPreview.style.display = 'none';
-                if (visionStatus) visionStatus.textContent = error.message;
-            }
-        });
+            if (visionStatus) visionStatus.textContent = error.message;
+        }
     }
+
+    foodUploadInput?.addEventListener('change', () => prepareSelectedFoodImage(foodUploadInput));
+    foodCameraCaptureInput?.addEventListener('change', () => prepareSelectedFoodImage(foodCameraCaptureInput));
 
     async function loadSelectedFoodDetails(food, grams) {
         if (!food) return;
+        const requestId = ++foodLookupGeneration;
         if (foodSearchStatus) foodSearchStatus.textContent = 'Đang tải khẩu phần và dữ liệu dinh dưỡng USDA...';
         const response = await fetch(`/api/nutrition/foods/${encodeURIComponent(food.fdcId)}?grams=${encodeURIComponent(grams)}`);
         const payload = await readJsonResponse(response);
         if (!response.ok) throw new Error(payload.error || 'Không thể tải chi tiết thực phẩm USDA.');
+        if (requestId !== foodLookupGeneration) return false;
         showFoodAnalysis(payload.food);
 
         if (foodPortionSelect && foodPortionLabel) {
@@ -2124,14 +2166,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     option.textContent = `${portion.label} — ${portion.gramWeight} g`;
                     foodPortionSelect.appendChild(option);
                 });
-                foodPortionSelect.style.display = 'block';
-                foodPortionLabel.style.display = 'block';
+                foodPortionSelect.hidden = false;
+                foodPortionLabel.hidden = false;
             } else {
-                foodPortionSelect.style.display = 'none';
-                foodPortionLabel.style.display = 'none';
+                foodPortionSelect.hidden = true;
+                foodPortionLabel.hidden = true;
             }
         }
-        if (foodSearchStatus) foodSearchStatus.textContent = `Đã tải bản ghi ${food.dataType} từ USDA. Hãy chọn đúng thực phẩm và kiểm tra khẩu phần.`;
+        if (foodSearchStatus) foodSearchStatus.textContent = `Đã tải bản ghi ${food.dataType} từ USDA. Hãy kiểm tra đúng món và khẩu phần.`;
+        return true;
     }
 
     if (foodResultSelect) {
@@ -2153,10 +2196,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!selected || !grams) return;
             try {
                 if (foodServingGrams) foodServingGrams.value = grams;
-                const response = await fetch(`/api/nutrition/foods/${encodeURIComponent(selected.fdcId)}?grams=${encodeURIComponent(grams)}`);
-                const payload = await readJsonResponse(response);
-                if (!response.ok) throw new Error(payload.error || 'Không thể tính khẩu phần USDA này.');
-                showFoodAnalysis(payload.food);
+                await loadSelectedFoodDetails(selected, grams);
             } catch (error) {
                 if (foodSearchStatus) foodSearchStatus.textContent = error.message;
             }
@@ -2179,10 +2219,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (barcodeVideo) {
             barcodeVideo.pause();
             barcodeVideo.srcObject = null;
-            barcodeVideo.style.display = 'none';
+            barcodeVideo.classList.remove('is-active');
         }
         if (startBarcodeScanBtn) startBarcodeScanBtn.style.display = 'inline-flex';
-        if (stopBarcodeScanBtn) stopBarcodeScanBtn.style.display = 'none';
+        if (stopBarcodeScanBtn) stopBarcodeScanBtn.hidden = true;
     }
 
     async function lookupBrandedProduct(barcode) {
@@ -2191,13 +2231,20 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error('Mã vạch phải có 8, 12, 13 hoặc 14 chữ số.');
         }
         if (barcodeInput) barcodeInput.value = normalizedBarcode;
+        const grams = Number(foodServingGrams?.value || 100);
+        if (!Number.isFinite(grams) || grams < 1 || grams > 2000) {
+            throw new Error('Khẩu phần phải nằm trong khoảng 1–2.000 gram.');
+        }
+        const requestId = ++foodLookupGeneration;
+        resetFoodAnalysis();
+        foodSearchResults = [];
         if (barcodeStatus) barcodeStatus.textContent = 'Đang tìm sản phẩm thương hiệu trong USDA...';
         if (lookupBarcodeBtn) lookupBarcodeBtn.disabled = true;
         try {
-            const grams = Number(foodServingGrams?.value || 100);
             const response = await fetch(`/api/nutrition/barcode/${encodeURIComponent(normalizedBarcode)}?grams=${encodeURIComponent(grams)}`);
             const payload = await readJsonResponse(response);
             if (!response.ok) throw new Error(payload.error || 'Không thể tra cứu mã vạch này.');
+            if (requestId !== foodLookupGeneration) return;
             foodSearchResults = payload.foods || [];
             if (!foodSearchResults.length) {
                 throw new Error('Không tìm thấy mã này trong USDA. Hãy nhập tên sản phẩm hoặc kiểm tra nhãn dinh dưỡng.');
@@ -2210,7 +2257,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return option;
                 }));
             }
-            await loadSelectedFoodDetails(foodSearchResults[0], grams);
+            if (!await loadSelectedFoodDetails(foodSearchResults[0], grams)) return;
             if (foodSearchQuery) foodSearchQuery.value = foodSearchResults[0].name;
             if (barcodeStatus) {
                 barcodeStatus.textContent = `Đã tìm thấy ${foodSearchResults.length} sản phẩm. Hãy đối chiếu tên thương hiệu và khẩu phần trên nhãn.`;
@@ -2272,15 +2319,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     audio: false
                 });
                 barcodeVideo.srcObject = barcodeStream;
-                barcodeVideo.style.display = 'block';
+                barcodeVideo.classList.add('is-active');
                 await barcodeVideo.play();
                 startBarcodeScanBtn.style.display = 'none';
-                if (stopBarcodeScanBtn) stopBarcodeScanBtn.style.display = 'inline-flex';
+                if (stopBarcodeScanBtn) stopBarcodeScanBtn.hidden = false;
                 if (barcodeStatus) barcodeStatus.textContent = 'Đưa mã vạch vào giữa khung hình và giữ máy ổn định.';
                 barcodeScanFrame = requestAnimationFrame(scanBarcodeFrame);
-            } catch {
+            } catch (error) {
                 stopBarcodeScanner();
-                if (barcodeStatus) barcodeStatus.textContent = 'Không mở được camera. Hãy cấp quyền camera hoặc nhập mã bằng tay.';
+                const message = error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError'
+                    ? 'Bạn chưa cấp quyền camera. Hãy cho phép camera hoặc nhập mã bằng tay.'
+                    : error.name === 'NotFoundError'
+                        ? 'Không tìm thấy camera trên thiết bị này. Bạn vẫn có thể nhập mã bằng tay.'
+                        : 'Không thể mở camera. Hãy thử lại hoặc nhập mã bằng tay.';
+                if (barcodeStatus) barcodeStatus.textContent = message;
             } finally {
                 startBarcodeScanBtn.disabled = false;
             }
@@ -2303,9 +2355,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     barcodeInput?.addEventListener('input', () => {
         barcodeInput.value = barcodeInput.value.replace(/\D/g, '').slice(0, 14);
+        foodLookupGeneration += 1;
+        foodSearchResults = [];
+        resetFoodAnalysis();
+        if (foodResultSelect) foodResultSelect.replaceChildren();
     });
 
     window.addEventListener('pagehide', stopBarcodeScanner);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && barcodeStream) {
+            stopBarcodeScanner();
+            if (barcodeStatus) barcodeStatus.textContent = 'Đã tạm dừng camera khi rời trang. Bấm “Quét mã” để tiếp tục.';
+        }
+    });
 
     function applyVisionCandidate(candidate) {
         if (!candidate || !foodSearchQuery) return;
@@ -2314,7 +2376,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (visionFoodCandidates) {
         visionFoodCandidates.addEventListener('change', () => {
-            const candidate = JSON.parse(visionFoodCandidates.value);
+            let candidate;
+            try {
+                candidate = JSON.parse(visionFoodCandidates.value);
+            } catch {
+                return;
+            }
+            if (!Number.isFinite(candidate.confidence)) return;
             if (visionConfidence) {
                 const percent = Math.round(candidate.confidence * 100);
                 visionConfidence.textContent = `Độ tin cậy của gợi ý: ${percent}%.`;
@@ -2326,7 +2394,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (confirmFoodCandidateBtn) {
         confirmFoodCandidateBtn.addEventListener('click', () => {
             if (!visionFoodCandidates?.value) return;
-            applyVisionCandidate(JSON.parse(visionFoodCandidates.value));
+            let candidate;
+            try {
+                candidate = JSON.parse(visionFoodCandidates.value);
+            } catch {
+                if (visionStatus) visionStatus.textContent = 'Không thể đọc gợi ý này. Hãy phân tích ảnh lại.';
+                return;
+            }
+            applyVisionCandidate(candidate);
+            resetFoodAnalysis();
             if (recognizeFoodBtn) recognizeFoodBtn.disabled = false;
             if (visionStatus) visionStatus.textContent = 'Đã xác nhận tên món. Hãy nhập khối lượng đã cân rồi tra cứu USDA.';
         });
@@ -2334,23 +2410,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (foodSearchQuery) {
         foodSearchQuery.addEventListener('input', () => {
+            foodLookupGeneration += 1;
+            foodSearchResults = [];
+            resetFoodAnalysis();
+            if (foodResultSelect) foodResultSelect.replaceChildren();
             if (foodSearchQuery.value.trim().length >= 2 && recognizeFoodBtn) recognizeFoodBtn.disabled = false;
         });
     }
 
+    foodServingGrams?.addEventListener('input', () => {
+        foodLookupGeneration += 1;
+        foodSearchResults = [];
+        resetFoodAnalysis();
+        if (foodResultSelect) foodResultSelect.replaceChildren();
+    });
+
     if (analyzePhotoBtn) {
         analyzePhotoBtn.addEventListener('click', async () => {
             if (!selectedFoodImageDataUrl) return;
+            visionRequestController?.abort();
+            const requestController = new AbortController();
+            visionRequestController = requestController;
             analyzePhotoBtn.disabled = true;
             if (visionStatus) visionStatus.textContent = 'AI đang kiểm tra món ăn trong ảnh...';
+            if (visionSigninLink) visionSigninLink.hidden = true;
             try {
                 const response = await firebaseAuthenticatedFetch('/api/vision/recognize-food', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageDataUrl: selectedFoodImageDataUrl })
+                    body: JSON.stringify({ imageDataUrl: selectedFoodImageDataUrl }),
+                    signal: requestController.signal
                 });
                 const payload = await readJsonResponse(response);
                 if (!response.ok) throw new Error(payload.error || 'Không thể phân tích ảnh này.');
+                if (visionRequestController !== requestController) return;
                 if (!payload.isFood || !payload.candidates?.length) {
                     throw new Error(payload.note || 'Không nhận diện được món ăn. Hãy thử ảnh rõ hơn.');
                 }
@@ -2361,10 +2454,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     option.textContent = `${candidate.name} — độ tin cậy ${Math.round(candidate.confidence * 100)}%`;
                     return option;
                 }));
-                visionFoodCandidates.style.display = 'block';
-                if (visionCandidatesLabel) visionCandidatesLabel.style.display = 'block';
+                visionFoodCandidates.hidden = false;
+                if (visionCandidatesLabel) visionCandidatesLabel.hidden = false;
                 visionFoodCandidates.dispatchEvent(new Event('change'));
-                if (confirmFoodCandidateBtn) confirmFoodCandidateBtn.style.display = 'block';
+                if (confirmFoodCandidateBtn) confirmFoodCandidateBtn.hidden = false;
                 if (recognizeFoodBtn) recognizeFoodBtn.disabled = true;
                 if (visionStatus) {
                     const confidenceMessage = payload.confidenceLevel === 'low'
@@ -2375,9 +2468,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     visionStatus.textContent = `${payload.note || ''} ${confidenceMessage}`;
                 }
             } catch (error) {
-                if (visionStatus) visionStatus.textContent = error.message;
+                if (error.name !== 'AbortError' && visionRequestController === requestController && visionStatus) {
+                    visionStatus.textContent = error.message;
+                    if (error.code === 'auth/sign-in-required' && visionSigninLink) {
+                        visionSigninLink.hidden = false;
+                    }
+                }
             } finally {
-                analyzePhotoBtn.disabled = false;
+                if (visionRequestController === requestController) {
+                    visionRequestController = null;
+                    analyzePhotoBtn.disabled = !selectedFoodImageDataUrl;
+                }
             }
         });
     }
@@ -2385,19 +2486,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (recognizeFoodBtn) {
         recognizeFoodBtn.addEventListener('click', async () => {
             const query = foodSearchQuery?.value.trim() || '';
-            const grams = Number(foodServingGrams?.value || 100);
             if (query.length < 2) {
                 if (foodSearchStatus) foodSearchStatus.textContent = 'Hãy nhập tên món có ít nhất 2 ký tự.';
                 foodSearchQuery?.focus();
                 return;
             }
+            const grams = Number(foodServingGrams?.value || 100);
+            if (!Number.isFinite(grams) || grams < 1 || grams > 2000) {
+                if (foodSearchStatus) foodSearchStatus.textContent = 'Khẩu phần phải nằm trong khoảng 1–2.000 gram.';
+                foodServingGrams?.focus();
+                return;
+            }
 
+            const requestId = ++foodLookupGeneration;
+            resetFoodAnalysis();
+            foodSearchResults = [];
             recognizeFoodBtn.disabled = true;
             if (foodSearchStatus) foodSearchStatus.textContent = 'Đang tìm trên USDA FoodData Central...';
             try {
                 const response = await fetch(`/api/nutrition/search?q=${encodeURIComponent(query)}&grams=${encodeURIComponent(grams)}`);
                 const payload = await readJsonResponse(response);
                 if (!response.ok) throw new Error(payload.error || 'Không thể tìm kiếm thực phẩm.');
+                if (requestId !== foodLookupGeneration) return;
                 foodSearchResults = payload.foods || [];
                 if (!foodSearchResults.length) throw new Error('Không tìm thấy món phù hợp. Hãy thử tên tiếng Anh ngắn và tổng quát hơn.');
 
@@ -2409,13 +2519,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         return option;
                     }));
                 }
-                await loadSelectedFoodDetails(foodSearchResults[0], grams);
+                if (!await loadSelectedFoodDetails(foodSearchResults[0], grams)) return;
                 if (foodSearchStatus) foodSearchStatus.textContent = `Tìm thấy ${foodSearchResults.length} kết quả USDA. Hãy chọn bản ghi và khẩu phần gần đúng nhất.`;
-            } catch (error) {
-                resetFoodAnalysis();
-                if (foodSearchStatus) foodSearchStatus.textContent = error.message;
-            } finally {
                 recognizeFoodBtn.disabled = false;
+            } catch (error) {
+                if (requestId === foodLookupGeneration) {
+                    resetFoodAnalysis();
+                    if (foodSearchStatus) foodSearchStatus.textContent = error.message;
+                }
+            } finally {
+                if (requestId === foodLookupGeneration) {
+                    recognizeFoodBtn.disabled = (foodSearchQuery?.value.trim().length || 0) < 2;
+                }
             }
         });
     }
@@ -2909,6 +3024,88 @@ document.addEventListener("DOMContentLoaded", () => {
                 showAuthFeedback('verification-action-status', getAuthErrorMessage(error), true);
             } finally {
                 resendVerificationBtn.disabled = false;
+            }
+        });
+    }
+
+    const accountDataStatus = getEl('account-data-status');
+    const reportAccountDataStatus = (message) => {
+        if (!accountDataStatus) return;
+        accountDataStatus.hidden = false;
+        accountDataStatus.textContent = message;
+    };
+
+    const exportAccountDataBtn = getEl('export-account-data-btn');
+    if (exportAccountDataBtn) {
+        exportAccountDataBtn.addEventListener('click', async () => {
+            exportAccountDataBtn.disabled = true;
+            reportAccountDataStatus('Đang chuẩn bị bản sao dữ liệu...');
+            try {
+                const user = await ensureAuthenticatedUser();
+                const data = await window.FitAIAccountDataUtils.loadAccountData(db, user);
+                const exported = window.FitAIAccountDataUtils.buildAccountExport({
+                    uid: user.uid,
+                    email: user.email || '',
+                    exportedAt: new Date(),
+                    data
+                });
+                const blob = new Blob([JSON.stringify(exported, null, 2)], {
+                    type: 'application/json'
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `fitai-data-${new Date().toISOString().slice(0, 10)}.json`;
+                link.click();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                reportAccountDataStatus('Đã tải bản sao dữ liệu FitAI xuống thiết bị này.');
+            } catch (error) {
+                console.error('Unable to export account data:', error);
+                reportAccountDataStatus('Không thể tải dữ liệu. Hãy kiểm tra kết nối và thử lại.');
+            } finally {
+                exportAccountDataBtn.disabled = false;
+            }
+        });
+    }
+
+    const deleteAccountBtn = getEl('delete-account-btn');
+    if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener('click', async () => {
+            const passwordInput = getEl('delete-account-password');
+            const password = passwordInput?.value || '';
+            const user = auth.currentUser;
+            if (!user || user.isAnonymous || !user.email) {
+                reportAccountDataStatus('Hãy đăng nhập bằng tài khoản email trước khi xóa tài khoản.');
+                return;
+            }
+            if (!password) {
+                reportAccountDataStatus('Nhập mật khẩu để xác nhận danh tính trước khi xóa.');
+                passwordInput?.focus();
+                return;
+            }
+            if (!window.confirm('Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu FitAI của tài khoản này? Thao tác này không thể hoàn tác.')) {
+                return;
+            }
+
+            deleteAccountBtn.disabled = true;
+            reportAccountDataStatus('Đang xác thực và xóa dữ liệu tài khoản...');
+            let dataDeletionStarted = false;
+            try {
+                const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+                await user.reauthenticateWithCredential(credential);
+                dataDeletionStarted = true;
+                await window.FitAIAccountDataUtils.deleteAccountData(db, user.uid);
+                window.FitAIAccountDataUtils.clearLocalAccountData(localStorage, user.uid);
+                await user.delete();
+                reportAccountDataStatus('Tài khoản và dữ liệu đã được xóa.');
+            } catch (error) {
+                console.error('Unable to delete account data:', error);
+                reportAccountDataStatus(dataDeletionStarted
+                    ? 'Không thể hoàn tất việc xóa. Tài khoản vẫn có thể còn tồn tại và một phần dữ liệu có thể đã được xóa; hãy đăng nhập lại và thử lần nữa.'
+                    : getAuthErrorMessage(error));
+            } finally {
+                deleteAccountBtn.disabled = false;
+                if (passwordInput) passwordInput.value = '';
             }
         });
     }

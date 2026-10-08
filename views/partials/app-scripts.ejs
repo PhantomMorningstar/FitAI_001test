@@ -1,11 +1,13 @@
-<script src="/assets/js/i18n.js?v=54"></script>
+<script src="/assets/js/i18n.js?v=58"></script>
 <script src="/assets/js/error-monitor.js"></script>
 <script src="/assets/js/date-utils.js"></script>
 <script src="/assets/js/daily-focus-utils.js"></script>
 <script src="/assets/js/dietary-utils.js?v=54"></script>
 <script src="/assets/js/pwa.js"></script>
 <script src="/assets/js/motion.js"></script>
+<script>window.FitAIWebConfig = <%- JSON.stringify(typeof firebaseWebConfig === 'undefined' ? {} : firebaseWebConfig).replace(/</g, '\\u003c') %>;</script>
+<script src="/assets/js/account-data-utils.js"></script>
 <% (typeof extraScripts === 'undefined' ? [] : extraScripts).forEach((script) => { %>
     <script src="/assets/js/<%= script %>"></script>
 <% }); %>
-<script src="/assets/js/app.js?v=54"></script>
+<script src="/assets/js/app.js?v=56"></script>

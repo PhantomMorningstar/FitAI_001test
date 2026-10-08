@@ -1,6 +1,7 @@
 (function exposeI18n(root) {
     const STORAGE_KEY = 'fitai_language';
     const VI_TO_EN = Object.freeze({
+        'AI trả về câu trả lời không hợp lệ. Vui lòng thử lại.': 'AI returned an invalid response. Please try again.',
         'FitAI chỉ tạo kế hoạch tự động cho người trưởng thành không thuộc nhóm cần chăm sóc chuyên môn. Hãy chọn tất cả điều đúng với bạn.': 'FitAI only creates automated plans for adults who do not require professional care. Select every statement that applies to you.',
         'Thông tin này chỉ dùng để quyết định FitAI có nên tạo mục tiêu calorie hay không; đây không phải chẩn đoán y khoa.': 'This information is used only to decide whether FitAI should create a calorie target; it is not a medical diagnosis.',
         'Chế độ ăn:': 'Diet:',
@@ -28,6 +29,98 @@
         'Cài ứng dụng': 'Install app',
         'Bạn đang ngoại tuyến. Một số chức năng cần Internet.': 'You are offline. Some features require an Internet connection.',
         'Tổng quan': 'Overview',
+        'Sản phẩm có mã vạch?': 'Does the product have a barcode?',
+        'Quét bằng camera hoặc nhập UPC/EAN trên bao bì.': 'Scan with your camera or enter the UPC/EAN from the package.',
+        'Quét mã': 'Scan barcode',
+        'Tra mã': 'Look up barcode',
+        'Sản phẩm Việt Nam có thể chưa có trong USDA. Nếu không tìm thấy, hãy tra theo tên hoặc đối chiếu nhãn.': 'Products from Vietnam may not be listed in USDA. If not found, search by name or check the label.',
+        'Món ăn không có mã vạch?': 'Does the food have no barcode?',
+        'Chụp ảnh hoặc chọn ảnh để AI gợi ý tên món.': 'Take or choose a photo for AI to suggest the food name.',
+        'Chụp ảnh': 'Take photo',
+        'Chọn ảnh': 'Choose photo',
+        'Nhận diện món trong ảnh': 'Identify food in photo',
+        'Đăng nhập để dùng tính năng nhận diện ảnh': 'Sign in to use photo recognition',
+        'Chọn gợi ý phù hợp nhất': 'Choose the best suggestion',
+        'Xác nhận gợi ý này': 'Confirm this suggestion',
+        'AI chỉ gợi ý món nhìn thấy, không đo được khối lượng, dầu, nước sốt hoặc nguyên liệu bị che. Ảnh chỉ được gửi đi khi bạn bấm nhận diện.': 'AI only suggests visible foods; it cannot measure weight, oil, sauces, or hidden ingredients. The photo is sent only when you select Identify.',
+        'Kiểm tra dinh dưỡng': 'Check nutrition',
+        'Chọn đúng món và nhập khẩu phần đã cân để tra USDA.': 'Choose the correct food and enter its weighed portion to look it up in USDA.',
+        'Giá trị dinh dưỡng là ước tính từ USDA. Hãy kiểm tra tên, khẩu phần và nhãn sản phẩm khi có.': 'Nutrition values are estimates from USDA. Check the food name, portion, and product label when available.',
+        'Ảnh xem trước món ăn': 'Food photo preview',
+        'Ảnh đã sẵn sàng. Hãy nhận diện để lấy gợi ý tên món.': 'Photo is ready. Identify it to get food name suggestions.',
+        'Khẩu phần phải nằm trong khoảng 1–2.000 gram.': 'The portion must be between 1 and 2,000 grams.',
+        'Bạn chưa cấp quyền camera. Hãy cho phép camera hoặc nhập mã bằng tay.': 'Camera access was not granted. Allow camera access or enter the barcode manually.',
+        'Không tìm thấy camera trên thiết bị này. Bạn vẫn có thể nhập mã bằng tay.': 'No camera was found on this device. You can still enter the barcode manually.',
+        'Không thể mở camera. Hãy thử lại hoặc nhập mã bằng tay.': 'Could not open the camera. Try again or enter the barcode manually.',
+        'Đã tạm dừng camera khi rời trang. Bấm “Quét mã” để tiếp tục.': 'The camera paused when you left the page. Select “Scan barcode” to continue.',
+        'Không thể đọc gợi ý này. Hãy phân tích ảnh lại.': 'Could not read this suggestion. Analyze the photo again.',
+        'Không thể xử lý ảnh trên trình duyệt này.': 'This browser cannot process the image.',
+        'Ảnh không thể được nén đủ nhỏ. Hãy chọn ảnh có độ phân giải thấp hơn.': 'The photo could not be compressed enough. Choose a lower-resolution image.',
+        'Ví dụ: 049000050103': 'Example: 049000050103',
+        'Ảnh xem trước của món ăn': 'Food preview image',
+        'Ví dụ: fried chicken': 'Example: fried chicken',
+        'Cảnh báo an toàn dị ứng': 'Allergy safety warning',
+        'Giờ nhắc nhật ký thực phẩm': 'Food diary reminder time',
+        'Giờ nhắc cân nặng': 'Weight reminder time',
+        'Giờ nhắc vận động': 'Activity reminder time',
+        'Giờ nhắc giấc ngủ và stress': 'Sleep and stress reminder time',
+        'Biểu đồ tiến độ gồm cân nặng hằng ngày, trung bình 7 ngày và cân nặng mục tiêu': 'Progress chart showing daily weight, 7-day average, and target weight',
+        'Ghi bữa ăn': 'Log a meal',
+        'Ghi món và khẩu phần đã cân.': 'Log food and its weighed portion.',
+        'Ghi món ăn': 'Log food',
+        'Cập nhật vận động': 'Update activity',
+        'Thêm số bước và phút vận động hôm nay.': 'Add today’s steps and active minutes.',
+        'Ghi vận động': 'Log activity',
+        'Kiểm tra phục hồi': 'Check recovery',
+        'Ghi giấc ngủ đêm qua và mức stress.': 'Log last night’s sleep and stress level.',
+        'Ghi phục hồi': 'Log recovery',
+        'Ghi cân nặng': 'Log weight',
+        'Chỉ ghi khi đây là ngày bạn thường cân.': 'Only log your weight if you usually weigh yourself today.',
+        'Kích thước ảnh không hợp lệ.': 'The image dimensions are invalid.',
+        'Hãy chọn một ảnh món ăn.': 'Select a food photo.',
+        'Chỉ hỗ trợ ảnh JPEG, PNG, WebP hoặc GIF.': 'Only JPEG, PNG, WebP, or GIF images are supported.',
+        'Ảnh gốc phải nhỏ hơn hoặc bằng 20 MB.': 'The original image must be 20 MB or smaller.',
+        'Không thể bật chế độ ngoại tuyến trên trình duyệt này.': 'Offline mode is unavailable in this browser.',
+        'Hoàn thiện hồ sơ để tính năng lượng, các chất đa lượng và mục tiêu an toàn.': 'Complete your profile to calculate energy, macronutrients, and a safe target.',
+        '7–14 ngày đầu': 'First 7–14 days',
+        'Ít nhất 4 tuần': 'At least 4 weeks',
+        'Không thể trả lời câu hỏi dinh dưỡng lúc này.': 'Unable to answer your nutrition question right now.',
+        'Không thể tìm kiếm dữ liệu dinh dưỡng. Hãy thử lại.': 'Unable to search nutrition data. Please try again.',
+        'Mục tiêu calorie đề xuất phải là số nguyên từ 800–6.000 kcal/ngày.': 'The proposed calorie target must be a whole number between 800 and 6,000 kcal/day.',
+        'FitAI chỉ tạo gợi ý món khi hồ sơ và kế hoạch đã vượt qua kiểm tra an toàn.': 'FitAI only suggests meals when your profile and plan pass the safety checks.',
+        'Câu hỏi phải có ít nhất 2 ký tự.': 'Your question must contain at least 2 characters.',
+        'Mình không thể hướng dẫn hạn chế ăn cực đoan, nôn ói, làm mất nước, lạm dụng thuốc hoặc những cách giảm cân quá nhanh. Những hành vi này có thể gây tổn hại nghiêm trọng.': 'I can’t provide instructions for extreme food restriction, vomiting, dehydration, medication misuse, or rapid weight-loss methods. These behaviors can cause serious harm.',
+        'Tạm dừng thay đổi giảm cân không an toàn': 'Pause unsafe weight-loss changes',
+        'Liên hệ bác sĩ hoặc chuyên gia dinh dưỡng': 'Contact a doctor or registered dietitian',
+        'Chia sẻ với người đáng tin cậy nếu bạn cảm thấy không thể ăn uống hoặc vận động an toàn': 'Talk to someone you trust if you feel unable to eat or exercise safely',
+        'Hãy đi khám khẩn cấp nếu bạn choáng, đau ngực, yếu nghiêm trọng, lú lẫn hoặc không thể giữ thức ăn hay nước.': 'Seek emergency care if you feel faint, have chest pain, severe weakness, confusion, or cannot keep food or water down.',
+        'Trợ lý AI chưa được cấu hình. Hãy thêm GEMINI_API_KEY vào file .env.': 'The AI assistant is not configured. Add GEMINI_API_KEY to the .env file.',
+        'Trợ lý AI đang đạt giới hạn yêu cầu. Vui lòng thử lại sau.': 'The AI assistant has reached its request limit. Please try again later.',
+        'Trợ lý dinh dưỡng AI tạm thời không khả dụng.': 'The AI nutrition assistant is temporarily unavailable.',
+        'Bạn gửi quá nhiều yêu cầu. Hãy chờ một phút rồi thử lại.': 'You have sent too many requests. Wait a minute and try again.',
+        'Không tìm thấy | FitAI': 'Not Found | FitAI',
+        'Quay về tổng quan': 'Back to overview',
+        'Chuyển sang tiếng Anh': 'Switch to English',
+        'Chuyển sang tiếng Việt': 'Switch to Vietnamese',
+        'Tiếng Anh': 'English',
+        'Tiếng Việt': 'Vietnamese',
+        'Trải nghiệm Fit': 'Experience Fit',
+        'Kiểm tra an toàn trước khi tiếp tục': 'Safety check before you continue',
+        'Tôi đang mang thai': 'I am pregnant',
+        'Tôi đang cho con bú': 'I am breastfeeding',
+        'Tôi đang có hoặc từng có rối loạn ăn uống': 'I have or have had an eating disorder',
+        'Tôi có bệnh, dùng thuốc hoặc đang theo kế hoạch của bác sĩ': 'I have a medical condition, take medication, or follow a clinician’s plan',
+        'Đang kết nối an toàn...': 'Connecting securely...',
+        'Tạo tài khoản': 'Create account',
+        'Gửi lại email xác minh': 'Resend verification email',
+        'Giới tính:': 'Gender:',
+        'Chiều cao:': 'Height:',
+        '1 — Rất thấp': '1 — Very low',
+        '2 — Thấp': '2 — Low',
+        '3 — Vừa': '3 — Moderate',
+        '5 — Rất cao': '5 — Very high',
+        'Lịch sử giấc ngủ và mức stress': 'Sleep and stress history',
+        'Giấc ngủ': 'Sleep',
         'GỢI Ý THEO HỒ SƠ': 'PROFILE-BASED SUGGESTIONS',
         'Món ăn phù hợp với mục tiêu của bạn': 'Foods that fit your goal',
         'Ý tưởng món ăn theo mục tiêu của bạn': 'Meal ideas for your goal',
@@ -365,6 +458,8 @@
         'Mục tiêu tăng cân phải cao hơn cân nặng hiện tại.': 'A weight-gain target must be higher than your current weight.',
         'Mục tiêu duy trì phải nằm trong khoảng ±2 kg so với cân nặng hiện tại.': 'A maintenance target must stay within 2 kg of your current weight.',
         'Một hoặc nhiều lựa chọn dị ứng không hợp lệ.': 'One or more allergy selections are invalid.',
+        'Dị ứng phải được cung cấp dưới dạng danh sách lựa chọn.': 'Allergies must be provided as a list of selections.',
+        'Thông tin sàng lọc an toàn không hợp lệ. Hãy kiểm tra lại các lựa chọn.': 'The safety screening information is invalid. Please check your selections.',
         'FitAI không tạo kế hoạch thay đổi cân nặng tự động trong thai kỳ. Hãy làm việc với bác sĩ sản khoa.': 'FitAI does not create automated weight-change plans during pregnancy. Please work with an obstetric healthcare professional.',
         'FitAI không tạo mục tiêu calorie tự động khi đang cho con bú. Nhu cầu dinh dưỡng và năng lượng cần được chuyên gia y tế xem xét.': 'FitAI does not create automated calorie targets while breastfeeding. Nutrient and energy needs should be reviewed with a healthcare professional.',
         'Mục tiêu calorie và cân nặng tự động có thể không phù hợp nếu đang hoặc từng có rối loạn ăn uống. Hãy tìm hỗ trợ lâm sàng đủ chuyên môn.': 'Automated calorie and weight targets may be inappropriate with a current or previous eating disorder. Please seek qualified clinical support.',
@@ -566,6 +661,7 @@
         'Hãy đăng nhập để lưu và đồng bộ dữ liệu này.': 'Sign in to save and sync this data.',
         'Email này đã có tài khoản. Hãy chọn Đăng nhập hoặc Quên mật khẩu.': 'An account already uses this email. Choose Sign in or Forgot password.',
         'Email hoặc mật khẩu không đúng.': 'The email or password is incorrect.',
+        'Mật khẩu không đúng. Vui lòng thử lại.': 'The password is incorrect. Try again.',
         'Địa chỉ email không hợp lệ.': 'The email address is invalid.',
         'Đăng nhập bằng email chưa được bật trong Firebase.': 'Email sign-in is not enabled in Firebase.',
         'Bạn thử quá nhiều lần. Hãy chờ một lúc rồi thử lại.': 'Too many attempts. Wait a while and try again.',
@@ -573,6 +669,24 @@
         'Mật khẩu cần có ít nhất 6 ký tự.': 'The password must contain at least 6 characters.',
         'Không thể kết nối Firebase. Hãy kiểm tra Internet.': 'Unable to connect to Firebase. Check your internet connection.',
         'Phương thức đăng nhập này đang bị tắt trong Firebase.': 'This sign-in method is disabled in Firebase.',
+        'Bạn đã đăng nhập. Hãy đăng xuất trước khi tạo tài khoản khác.': 'You are already signed in. Sign out before creating another account.',
+        'Hãy đăng xuất trước khi tạo tài khoản khác.': 'Sign out before creating another account.',
+        'Dữ liệu và quyền riêng tư': 'Data and privacy',
+        'Tải bản sao JSON gồm hồ sơ, nhật ký thực phẩm, cân nặng, vận động, giấc ngủ và trạng thái nhật ký. Bản sao chỉ được tạo khi bạn yêu cầu và tải trực tiếp xuống thiết bị này.': 'Download a JSON copy of your profile, food diary, weight, activity, sleep, and diary status data. The copy is created only when you request it and is downloaded directly to this device.',
+        'Tải dữ liệu của tôi': 'Download my data',
+        'Xóa tài khoản và dữ liệu': 'Delete account and data',
+        'Thao tác này xóa vĩnh viễn hồ sơ FitAI và các bản ghi sức khỏe gắn với tài khoản. Nhập mật khẩu để xác thực lại. Không thể hoàn tác.': 'This permanently deletes your FitAI profile and health records linked to this account. Enter your password to reauthenticate. This cannot be undone.',
+        'Mật khẩu hiện tại': 'Current password',
+        'Xóa tài khoản vĩnh viễn': 'Permanently delete account',
+        'Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu FitAI của tài khoản này? Thao tác này không thể hoàn tác.': 'Permanently delete this account and all of its FitAI data? This action cannot be undone.',
+        'Đang chuẩn bị bản sao dữ liệu...': 'Preparing your data copy...',
+        'Đã tải bản sao dữ liệu FitAI xuống thiết bị này.': 'Your FitAI data copy was downloaded to this device.',
+        'Không thể tải dữ liệu. Hãy kiểm tra kết nối và thử lại.': 'Unable to download your data. Check your connection and try again.',
+        'Hãy đăng nhập bằng tài khoản email trước khi xóa tài khoản.': 'Sign in with an email account before deleting your account.',
+        'Nhập mật khẩu để xác nhận danh tính trước khi xóa.': 'Enter your password to verify your identity before deletion.',
+        'Đang xác thực và xóa dữ liệu tài khoản...': 'Verifying your identity and deleting account data...',
+        'Tài khoản và dữ liệu đã được xóa.': 'Your account and data have been deleted.',
+        'Không thể hoàn tất việc xóa. Tài khoản vẫn có thể còn tồn tại và một phần dữ liệu có thể đã được xóa; hãy đăng nhập lại và thử lần nữa.': 'Deletion could not be completed. Your account may still exist and some data may already have been deleted; sign in again and retry.',
         'Không thể hoàn tất thao tác tài khoản. Vui lòng thử lại.': 'Unable to complete the account operation. Try again.',
         'Đăng nhập hoặc hoàn thành bảng câu hỏi để xem gợi ý món ăn.': 'Sign in or complete the questionnaire to view meal suggestions.',
         'Đăng nhập để xem nhật ký.': 'Sign in to view your diary.',
@@ -689,8 +803,14 @@
             const stored = originalAttributes.get(node) || {};
             ['placeholder', 'aria-label', 'title', 'alt'].forEach((attribute) => {
                 if (!node.hasAttribute(attribute)) return;
-                if (!(attribute in stored)) stored[attribute] = node.getAttribute(attribute);
-                node.setAttribute(attribute, translateText(stored[attribute], language));
+                let original = stored[attribute];
+                const current = node.getAttribute(attribute);
+                if (!(attribute in stored) || current !== translateText(original, language)) {
+                    original = current;
+                    stored[attribute] = original;
+                }
+                const translated = translateText(original, language);
+                if (current !== translated) node.setAttribute(attribute, translated);
             });
             originalAttributes.set(node, stored);
             node.childNodes.forEach(translateNode);
@@ -700,8 +820,8 @@
             const button = documentObject.getElementById('language-toggle');
             if (!button) return;
             button.textContent = language === 'vi' ? 'EN' : 'VI';
-            button.setAttribute('aria-label', language === 'vi' ? 'Switch to English' : 'Chuyển sang tiếng Việt');
-            button.setAttribute('title', language === 'vi' ? 'English' : 'Tiếng Việt');
+            button.setAttribute('aria-label', language === 'vi' ? 'Chuyển sang tiếng Anh' : 'Switch to Vietnamese');
+            button.setAttribute('title', language === 'vi' ? 'Tiếng Anh' : 'Vietnamese');
         }
 
         function apply(nextLanguage) {
@@ -729,7 +849,9 @@
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     mutation.addedNodes.forEach(translateNode);
-                    if (mutation.type === 'characterData') {
+                    if (mutation.type === 'attributes') {
+                        translateNode(mutation.target);
+                    } else if (mutation.type === 'characterData') {
                         const current = mutation.target.nodeValue;
                         const known = originalText.get(mutation.target);
                         if (current !== translateText(known || '', language)) originalText.set(mutation.target, current);
@@ -737,7 +859,13 @@
                     }
                 });
             });
-            observer.observe(documentObject.body, { characterData: true, childList: true, subtree: true });
+            observer.observe(documentObject.body, {
+                attributes: true,
+                attributeFilter: ['placeholder', 'aria-label', 'title', 'alt'],
+                characterData: true,
+                childList: true,
+                subtree: true
+            });
         }
 
         return { apply, getLanguage: () => language, start };

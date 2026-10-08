@@ -1,5 +1,6 @@
 (function exposeImageUtils(root) {
     const MAX_DIMENSION = 1600;
+    const MAX_PREPARED_BYTES = 4 * 1024 * 1024;
     const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
     const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
@@ -23,18 +24,37 @@
         if (!validation.valid) throw new Error(validation.error);
         const bitmap = await createImageBitmap(file);
         try {
-            const size = calculateContainSize(bitmap.width, bitmap.height);
+            let size = calculateContainSize(bitmap.width, bitmap.height);
             const canvas = document.createElement('canvas');
-            canvas.width = size.width;
-            canvas.height = size.height;
-            canvas.getContext('2d').drawImage(bitmap, 0, 0, size.width, size.height);
-            return canvas.toDataURL('image/jpeg', 0.84);
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Không thể xử lý ảnh trên trình duyệt này.');
+            let imageDataUrl;
+            let quality = 0.82;
+            do {
+                canvas.width = size.width;
+                canvas.height = size.height;
+                context.drawImage(bitmap, 0, 0, size.width, size.height);
+                imageDataUrl = canvas.toDataURL('image/jpeg', quality);
+                const preparedBytes = Math.floor((imageDataUrl.length - imageDataUrl.indexOf(',') - 1) * 3 / 4);
+                if (preparedBytes <= MAX_PREPARED_BYTES) return imageDataUrl;
+                if (quality > 0.58) quality -= 0.12;
+                else size = calculateContainSize(size.width * 0.8, size.height * 0.8);
+            } while (Math.max(size.width, size.height) > 320);
+            throw new Error('Ảnh không thể được nén đủ nhỏ. Hãy chọn ảnh có độ phân giải thấp hơn.');
         } finally {
             bitmap.close();
         }
     }
 
-    const api = { ALLOWED_TYPES, calculateContainSize, MAX_DIMENSION, MAX_SOURCE_BYTES, prepareImageFile, validateImageFile };
+    const api = {
+        ALLOWED_TYPES,
+        calculateContainSize,
+        MAX_DIMENSION,
+        MAX_PREPARED_BYTES,
+        MAX_SOURCE_BYTES,
+        prepareImageFile,
+        validateImageFile
+    };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     root.FitAIImageUtils = api;
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -29,6 +29,13 @@ test('successful sign-in updates the current page without a refresh', () => {
   assert.match(scriptsPartialSource, /\/assets\/js\/app\.js\?v=\d+/);
 });
 
+test('profile account settings and logout are visible to signed-in users', () => {
+  assert.match(
+    appSource,
+    /const settingsPanel = document\.getElementById\('settings-panel'\);[\s\S]*?settingsPanel\.style\.display = isRegistered && profilePage \? 'block' : 'none'/
+  );
+});
+
 test('logout buttons prevent duplicate requests and handle failures', () => {
   assert.match(appSource, /overviewLogoutBtn\.disabled = true/);
   assert.match(appSource, /btnLogout\.disabled = true/);
@@ -48,6 +55,14 @@ test('email sign up works without requiring anonymous Firebase auth', () => {
   assert.match(signUpFunction, /currentUser\?\.isAnonymous/);
   assert.match(signUpFunction, /createUserWithEmailAndPassword/);
   assert.doesNotMatch(signUpFunction, /ensureAuthenticatedUser/);
+});
+
+test('guest onboarding draft is copied into the newly registered account scope', () => {
+  const signUpFunction = appSource.match(/async function createOrUpgradeAccount\(email, password\) \{([\s\S]*?)\n\}/)?.[1] || '';
+  assert.match(signUpFunction, /const guestDraft = loadOnboardingDraft\(currentUser\)/);
+  assert.match(signUpFunction, /saveOnboardingDraft\(guestDraft, result\.user\)/);
+  assert.match(signUpFunction, /setOnboardingCompleted\(guestOnboardingCompleted, result\.user\)/);
+  assert.match(signUpFunction, /auth\/account-already-signed-in/);
 });
 
 test('Firebase auth errors are translated to actionable Vietnamese messages', () => {

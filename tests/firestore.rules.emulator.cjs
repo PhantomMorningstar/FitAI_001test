@@ -201,6 +201,12 @@ test('legacy diary documents can be migrated only by the matching userId', async
   delete legacy.ownerId;
   legacy.userId = 'user-a';
   await seed((db) => setDoc(doc(db, 'foodDiaries/legacy-1'), legacy));
+  const legacyQuery = query(
+    collection(dbFor('user-a'), 'foodDiaries'),
+    where('userId', '==', 'user-a')
+  );
+  const legacySnapshot = await assertSucceeds(getDocs(legacyQuery));
+  assert.equal(legacySnapshot.size, 1);
   await assertSucceeds(updateDoc(doc(dbFor('user-a'), 'foodDiaries/legacy-1'), {
     ownerId: 'user-a',
     userId: deleteField()

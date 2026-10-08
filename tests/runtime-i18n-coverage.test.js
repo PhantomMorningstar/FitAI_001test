@@ -30,13 +30,28 @@ function runtimeVietnameseStrings(source) {
   return [...strings];
 }
 
-test('every static Vietnamese runtime UI string has an English translation', () => {
-  const source = fs.readFileSync(
-    path.join(__dirname, '../public/assets/js/app.js'),
-    'utf8'
-  );
-  const missing = runtimeVietnameseStrings(source)
-    .filter((value) => translateText(value, 'en') === value);
+test('every Vietnamese runtime UI string has an English translation', () => {
+  const sourceFiles = [
+    '../public/assets/js/app.js',
+    '../public/assets/js/daily-focus-utils.js',
+    '../public/assets/js/image-utils.js',
+    '../public/assets/js/pwa.js',
+    '../public/assets/js/roadmap-utils.js',
+    '../src/controllers/nutrition-chat.controller.js',
+    '../src/controllers/nutrition.controller.js',
+    '../src/controllers/profile.controller.js',
+    '../src/middleware/api-rate-limit.middleware.js',
+    '../src/services/meal-suggestion.service.js',
+    '../src/services/nutrition-chat.service.js'
+  ];
+  const missing = [];
+
+  sourceFiles.forEach((relativePath) => {
+    const source = fs.readFileSync(path.join(__dirname, relativePath), 'utf8');
+    runtimeVietnameseStrings(source)
+      .filter((value) => !value.includes('<') && translateText(value, 'en') === value)
+      .forEach((value) => missing.push(`${relativePath}: ${value}`));
+  });
 
   assert.deepEqual(
     missing,

@@ -656,14 +656,35 @@ a { color: inherit; }
 .health-screening input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary-color); flex: 0 0 auto; }
 .health-screening small { color: #735b2c; }
 
-.upload-zone { min-height: 330px; padding: 34px 24px; display: flex; flex-direction: column; justify-content: center; border: 2px dashed #aacdbd; border-radius: 20px; background: #f7fbf9; text-align: center; transition: 160ms ease; }
-.upload-zone:hover { border-color: var(--primary-color); background: var(--primary-soft); }
+.upload-zone { min-width: 0; padding: 22px; display: flex; flex-direction: column; gap: 18px; border: 1px solid var(--border-color); border-radius: 20px; background: #f7fbf9; }
+.camera-workspace { grid-template-columns: minmax(0, 680px); justify-content: center; }
+.camera-workspace.has-analysis { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: stretch; }
+.barcode-scanner, .photo-scanner, .food-search { min-width: 0; padding: 16px; border: 1px solid var(--border-color); border-radius: 15px; background: white; }
+.camera-section-heading { margin-bottom: 14px; display: flex; align-items: flex-start; gap: 11px; text-align: left; }
+.camera-section-heading h2 { margin: 0; font-size: 16px; }
+.camera-section-heading .subtitle { margin: 3px 0 0; font-size: 12px; }
+.camera-step { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; border-radius: 10px; background: var(--primary-soft); color: var(--primary-dark); font-size: 12px; font-weight: 850; }
+.camera-action-row, .barcode-entry-row, .serving-search-row { display: flex; align-items: end; gap: 9px; }
+.camera-action-row > .btn { flex: 1; justify-content: center; }
+.barcode-scanner label, .food-search label { margin: 12px 0 5px; display: block; font-size: 13px; font-weight: 700; text-align: left; }
+.barcode-entry-row input, .food-search input, .food-search select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #cfdcd6; border-radius: var(--radius-sm); background: white; }
+.barcode-entry-row .btn { flex: 0 0 auto; }
+.camera-status { min-height: 20px; margin: 8px 0 0; color: var(--text-muted); font-size: 13px; text-align: left; overflow-wrap: anywhere; }
+.camera-help-text { margin: 8px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; text-align: left; }
+#barcode-video { width: 100%; max-height: 260px; margin: 0 0 12px; display: none; border-radius: 12px; background: #111; object-fit: cover; }
+#barcode-video.is-active { display: block; }
+#stop-barcode-scan-btn[hidden], #vision-candidates-label[hidden], #vision-food-candidates[hidden], #confirm-food-candidate-btn[hidden], #food-preview[hidden] { display: none; }
+#food-preview:not([hidden]) { width: min(100%, 420px); max-height: 300px; margin: 12px auto 0; display: block; border-radius: 14px; background: #eaf0ed; object-fit: contain; box-shadow: var(--shadow-sm); }
+#analyze-photo-btn { width: 100%; margin-top: 10px; }
+#vision-food-candidates { width: 100%; min-height: 44px; margin-top: 6px; padding: 9px 11px; border: 1px solid #cfdcd6; border-radius: var(--radius-sm); background: white; }
+#confirm-food-candidate-btn { width: 100%; margin-top: 8px; }
+.serving-search-row { margin-top: 4px; }
+.serving-search-row > div { min-width: 0; flex: 1; }
+.serving-search-row .btn { flex: 0 0 auto; }
 .vision-confidence { margin-top: 8px; padding: 8px 10px; border-radius: 9px; font-size: 12px; font-weight: 750; }
 .vision-confidence.is-high { background: #e7f7ee; color: #126d49; }
 .vision-confidence.is-medium { background: #fff6df; color: #805608; }
 .vision-confidence.is-low { background: #fff0f0; color: #962c2c; }
-.upload-label { cursor: pointer; }
-#food-preview { object-fit: contain; box-shadow: var(--shadow-sm); }
 .food-analysis { min-height: 330px; padding: 24px; align-items: center; border-radius: 20px; background: linear-gradient(145deg, #f5fbf8, #edf7f2); }
 .nutrition-grid { align-items: stretch; }
 .calorie-tag { display: inline-flex; align-items: center; }
@@ -828,6 +849,11 @@ a { color: inherit; }
     .app-top-bar { min-height: 60px; padding: 0 16px; }
     .weekly-calendar { justify-content: flex-start; padding-inline: 14px; }
     .dashboard-main-grid, .grid-2-columns { grid-template-columns: 1fr; }
+    .camera-workspace.has-analysis { grid-template-columns: 1fr; }
+    .upload-zone { padding: 14px; }
+    .barcode-scanner, .photo-scanner, .food-search { padding: 13px; }
+    .serving-search-row { align-items: stretch; flex-direction: column; }
+    .serving-search-row .btn { width: 100%; }
     .section-card, .calorie-main-card, .macro-main-card { border-radius: 19px; padding: 20px; }
     .bottom-nav { padding-inline: 8px; }
     .nav-content-container { height: 66px; border-radius: 18px; }

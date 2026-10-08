@@ -17,6 +17,9 @@ test('service worker caches the app shell but excludes APIs and remote requests'
   const source = fs.readFileSync(path.join(publicDirectory, 'service-worker.js'), 'utf8');
   const appShell = source.match(/const APP_SHELL = \[([\s\S]*?)\];/)?.[1] || '';
   assert.match(source, /'\/offline\.html'/);
+  assert.match(source, /fitai-shell-v59/);
+  assert.match(appShell, /account-data-utils\.js/);
+  assert.match(appShell, /app\.js\?v=56/);
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
   assert.match(source, /url\.origin !== self\.location\.origin/);
   assert.doesNotMatch(appShell, /['"]\/api\//);

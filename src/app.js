@@ -12,6 +12,10 @@ app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', config.viewsDir);
 
+app.use((req, res, next) => {
+  res.locals.firebaseWebConfig = config.firebaseWebConfig;
+  next();
+});
 app.use(productionSecurity);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(config.publicDir));

@@ -1,13 +1,5 @@
 # FitAI
 
-For the graduation presentation, follow [DEMO.md](DEMO.md).
-
-Technical references:
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Health and technical limitations](docs/LIMITATIONS.md)
-- [Manual browser test report](docs/manual-browser-test-report.md)
-
 FitAI is a Node.js application for tracking nutrition and weight-management progress. The current product is an early-stage prototype built with Express, EJS, Firebase, and browser-side JavaScript.
 
 ## Requirements
@@ -22,6 +14,7 @@ FitAI is a Node.js application for tracking nutrition and weight-management prog
 ```bash
 npm install
 copy .env.example .env
+# Edit .env with your Firebase Web app config and USDA key first.
 npm run dev
 ```
 
@@ -93,10 +86,17 @@ FitAI/
 ## Firebase Authentication setup
 
 Enable the Email/Password provider in the Firebase console before running the app.
+Set `FIREBASE_PROJECT_ID` and the Firebase Web app values in `.env`. These browser configuration values (`FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, and `FIREBASE_APP_ID`) are intentionally delivered to the browser and are not server secrets; keep USDA and Gemini API keys server-side.
 
-Guest mode is local-only and does not read or write Firestore. Signed-in email users store cloud data under their Firebase UID. Legacy anonymous users can still be upgraded by linking email/password credentials, but Anonymous Authentication is not required for new sessions.
+Guest mode is local-only and does not read or write Firestore. The onboarding draft remains on the current device; creating an account copies that draft into the new account's local onboarding state so it can be completed and saved to Firestore. Food, weight, activity, and wellness history require a signed-in account. Signed-in users store cloud data under their Firebase UID. Legacy anonymous users can still be upgraded by linking email/password credentials, but Anonymous Authentication is not required for new sessions.
 
 Do not use shared fallback identifiers for guest data. Firestore rules authorize cloud documents by `request.auth.uid` and their `ownerId` field.
+
+## Account data and privacy
+
+Signed-in users can download a versioned JSON export from the Profile page. It includes the profile and the user's food diary, weight, activity, wellness, and diary-completion records, including legacy food-diary records associated with that UID. The export is generated on request and downloaded by the browser.
+
+The Profile page also provides permanent account deletion. The user must re-enter their email/password credentials; FitAI then deletes records belonging to that UID from the supported Firestore collections and device-local account state before deleting the Firebase Authentication account. A network or permission failure can interrupt this multi-step deletion, so the UI explicitly reports that the account may remain and that some records may already have been removed. Retry while signed in to finish cleanup.
 
 ## Firestore Security Rules
 
@@ -116,7 +116,7 @@ npm run test:security
 
 The emulator suite verifies that unauthenticated clients and a second signed-in user cannot list, read, create, update, or delete another user's profile, food diary, weight, activity, or wellness records. It also verifies that unrestricted collection queries and unknown collections are denied.
 
-Before deploying, copy `.firebaserc.example` to `.firebaserc` and replace the placeholder with your Firebase project ID. Deploy only the rules with:
+Before deploying, configure the same Firebase project in `.env` and `.firebaserc`; the server verifies tokens against `FIREBASE_PROJECT_ID`, and the browser receives the Firebase Web app configuration from that project. Copy `.firebaserc.example` to `.firebaserc` and replace the placeholder with your Firebase project ID. Deploy only the rules with:
 
 ```bash
 npm run firebase:deploy:rules
@@ -131,3 +131,18 @@ npm run firebase:deploy:firestore
 ## Important product note
 
 Camera and food-assistant nutrition values come from USDA FoodData Central. They remain estimates that depend on selecting the correct database record and measuring the portion accurately. Manual label entry remains available when the external service is unavailable.
+
+## Verification before release
+
+Run the automated checks from the project root:
+
+```bash
+npm run check
+npm test
+npm run test:e2e
+npm run test:security
+```
+
+The Firestore Emulator suite requires Java 11 or newer. Before deploying, configure the production Firebase project and its Web app values plus the private USDA key in the environment, review the Firebase Authentication providers and deployed Firestore rules/indexes, and verify account export/deletion using a non-production test account. The built-in request limiters are process-local; use a shared rate-limit store before running multiple server replicas. `npm start` checks required production settings when `NODE_ENV=production`; the health endpoint is `/healthz`.
+
+Both E2E commands start the Firebase Authentication and Firestore emulators with the `demo-fitai` project. The authenticated journey exercises emulator-backed account/profile/health-data persistence; USDA nutrition responses are stubbed so the test does not depend on external services.
